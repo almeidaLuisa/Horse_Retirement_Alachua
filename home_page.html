@@ -89,7 +89,7 @@
     <main>
       <section class="hero text-center">
         <div class="container">
-          <h1 class="display-6">Welcome to Alachue County Horse Retirement House</h1>
+          <h1 class="display-6">Welcome to Alachua County Horse Retirement House</h1>
           <p class="lead">We provide lifelong care and retirement for horses in Alachua County.</p>
           <div class="card card-body mt-4 card-demo">
             <p>This page contains enough content to test the floating navbar behavior when you scroll.</p>
@@ -163,7 +163,11 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const anchors = Array.from(doc.querySelectorAll('a')).map(a => a.getAttribute('href'));
-            const images = anchors.filter(h => /\.(jpe?g|png|gif|webp)$/i.test(h)).sort();
+            // Filter: only image files, exclude parent dir (..), and remove query params
+            const images = anchors
+              .filter(h => h && h !== '../' && /\.(jpe?g|png|gif|webp)$/i.test(h.split('?')[0]))
+              .map(h => h.split('?')[0])
+              .sort();
 
             if (images.length === 0) {
               gallery.innerHTML = '<p class="text-muted">No images found in images/.</p>';
