@@ -39,7 +39,7 @@
       /* example hero styles */
       .hero { 
         padding: 6rem 1rem; 
-        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('images/Abby.jpg') center/cover no-repeat;
+        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/images/Abby.jpg') center/cover no-repeat;
         color: rgb(255, 255, 255);
         min-height: 500px;
         display: flex;
@@ -117,7 +117,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
               <div class="modal-body">
-                <form>
+                <form id="loginForm">
                   <div class="mb-3">
                     <label for="emailInput" class="form-label">Email address</label>
                     <input type="email" class="form-control" id="emailInput" placeholder="Enter your email" />
@@ -126,11 +126,13 @@
                     <label for="passwordInput" class="form-label">Password</label>
                     <input type="password" class="form-control" id="passwordInput" placeholder="Enter your password" />
                   </div>
+                  <div class="text-danger small" id="loginError" style="display:none;"></div>
                 </form>
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Login</button>
+                <a class="btn btn-link" href="register_page.html">Sign Up</a>
+                <button type="button" class="btn btn-primary" id="loginBtn">Login</button>
               </div>
             </div>
           </div>
@@ -147,40 +149,87 @@
       (function () {
         const gallery = document.getElementById('gallery');
         const seeMoreBtn = document.getElementById('seeMoreBtn');
-        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+        const loginModalEl = document.getElementById('loginModal');
+        const loginModal = new bootstrap.Modal(loginModalEl);
+        const loginBtn = document.getElementById('loginBtn');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
 
-        if (!gallery) return;
+        function getToken() {
+          return localStorage.getItem('authToken');
+        }
 
-        // Fetch directory listing from /images/
-        fetch('images/')
-          .then(res => {
-            if (!res.ok) throw new Error('Directory listing not available');
-            return res.text();
-          })
-          .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const anchors = Array.from(doc.querySelectorAll('a')).map(a => a.getAttribute('href'));
-            // Filter: only image files, exclude parent dir (..), and remove query params
-            const images = anchors
-              .filter(h => h && h !== '../' && /\.(jpe?g|png|gif|webp)$/i.test(h.split('?')[0]))
-              .map(h => h.split('?')[0])
-              .sort();
+        function setLoginError(message) {
+          if (!loginError) return;
+          if (!message) {
+            loginError.style.display = 'none';
+            loginError.textContent = '';
+            return;
+          }
+          loginError.style.display = 'block';
+          loginError.textContent = message;
+        }
 
-            if (images.length === 0) {
-              gallery.innerHTML = '<p class="text-muted">No images found in images/.</p>';
+        async function handleLogin() {
+          const email = document.getElementById('emailInput')?.value?.trim();
+          const password = document.getElementById('passwordInput')?.value;
+          setLoginError('');
+
+          if (!email || !password) {
+            setLoginError('Please enter email and password.');
+            return;
+          }
+
+          try {
+            const res = await fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+              setLoginError(data?.error || 'Login failed.');
               return;
             }
 
-            gallery.innerHTML = '';
+            localStorage.setItem('authToken', data.token);
+            loginModal.hide();
+            await loadGallery();
+          } catch {
+            setLoginError('Network error. Is the server running?');
+          }
+        }
 
-            // Show only first 5 images
-            const displayImages = images.slice(0, 5);
+        if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+        if (loginForm) loginForm.addEventListener('submit', (e) => { e.preventDefault(); handleLogin(); });
+        if (loginModalEl) loginModalEl.addEventListener('shown.bs.modal', () => setLoginError(''));
+
+        if (!gallery) return;
+
+        async function loadGallery() {
+          gallery.innerHTML = '<p class="text-muted">Loading images…</p>';
+          const token = getToken();
+
+          try {
+            const res = await fetch('/api/images');
+            const data = await res.json();
+            const images = Array.isArray(data?.images) ? data.images : [];
+
+            if (images.length === 0) {
+              gallery.innerHTML = '<p class="text-muted">No images found.</p>';
+              if (seeMoreBtn) seeMoreBtn.style.display = 'none';
+              return;
+            }
+
+            const isLoggedIn = Boolean(token);
+            const displayImages = isLoggedIn ? images : images.slice(0, 5);
+
+            gallery.innerHTML = '';
             displayImages.forEach(src => {
               const col = document.createElement('div');
               col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
               const img = document.createElement('img');
-              img.src = 'images/' + src;
+              img.src = '/images/' + src;
               img.alt = src;
               img.className = 'gallery-img img-fluid';
               img.loading = 'lazy';
@@ -188,17 +237,21 @@
               gallery.appendChild(col);
             });
 
-            // Show "See More" button only if there are more than 5 images
-            if (images.length > 5) {
-              seeMoreBtn.style.display = 'inline-block';
-              seeMoreBtn.addEventListener('click', () => {
-                loginModal.show();
-              });
+            if (seeMoreBtn) {
+              if (!isLoggedIn && images.length > 5) {
+                seeMoreBtn.style.display = 'inline-block';
+                seeMoreBtn.onclick = () => loginModal.show();
+              } else {
+                seeMoreBtn.style.display = 'none';
+              }
             }
-          })
-          .catch(() => {
-            gallery.innerHTML = '<p class="text-muted">Unable to load images. Serve the site with a server (e.g., `python -m http.server`).</p>';
-          });
+          } catch {
+            gallery.innerHTML = '<p class="text-muted">Unable to load images. Start the Node server.</p>';
+            if (seeMoreBtn) seeMoreBtn.style.display = 'none';
+          }
+        }
+
+        loadGallery();
       })();
     </script>
   </body>
