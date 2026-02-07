@@ -1,13 +1,98 @@
-<!-- #beggining of the home page by Luisa and Viane  -->
-<!-- Floting navbar: -->
- <!-- comment to test -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Horse Retirement Alachua — Home</title>
+    <!-- Bootstrap CSS (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
 
-<nav class="navbar bg-body-tertiary">
-  <div class="container-fluid">
-    <a class="navbar-brand">Navbar</a>
-    <form class="d-flex" role="search">
-      <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
-      <button class="btn btn-outline-success" type="submit">Search</button>
-    </form>
-  </div>
-</nav>
+    <style>
+      /* keep content visible when navbar is fixed */
+      body { padding-top: 76px; }
+
+      /* custom navbar look */
+      .navbar-custom {
+        background: linear-gradient(90deg, rgba(2,48,71,0.95), rgba(7,102,121,0.95));
+        box-shadow: 0 6px 18px rgba(2,48,71,0.18);
+        backdrop-filter: blur(6px);
+        transition: background-color 200ms ease, transform 120ms ease;
+      }
+
+      .navbar-custom .navbar-brand {
+        font-weight: 700;
+        letter-spacing: 0.4px;
+      }
+
+      .nav-link { color: rgba(255,255,255,0.9) !important; }
+      .nav-link:hover { color: #fff !important; text-decoration: underline; }
+
+      .btn-cta {
+        background: #ffd166; color: #003049; font-weight: 600;
+      }
+
+      /* subtle collapse shadow on mobile menu */
+      .navbar-collapse { box-shadow: 0 4px 18px rgba(0,0,0,0.06); }
+
+      /* example hero styles */
+      .hero { padding: 6rem 1rem; background: linear-gradient(180deg, #f8fafc, #ffffff); }
+      .card-demo { max-width: 900px; margin: 0 auto; }
+    </style>
+  </head>
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+      <div class="container-fluid">
+        <a class="navbar-brand text-white" href="#">Horse Retirement Alachua</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="horsesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Horses</a>
+              <ul class="dropdown-menu" aria-labelledby="horsesDropdown">
+                <li><a class="dropdown-item" href="#list">All horses</a></li>
+                <li><a class="dropdown-item" href="#care">Care</a></li>
+              </ul>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+          </ul>
+
+          <form class="d-flex" role="search" onsubmit="event.preventDefault(); alert('Search is a demo');">
+            <input class="form-control me-2" type="search" placeholder="Search horses" aria-label="Search" />
+            <button class="btn btn-sm btn-outline-light" type="submit">Search</button>
+          </form>
+
+          <a class="ms-3 btn btn-sm btn-cta" href="#donate">Donate</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero text-center">
+        <div class="container">
+          <h1 class="display-6">Welcome to Horse Retirement Alachua</h1>
+          <p class="lead">We provide lifelong care and retirement for horses in Alachua County.</p>
+          <div class="card card-body mt-4 card-demo">
+            <p>This page contains enough content to test the floating navbar behavior when you scroll.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="container my-5">
+        <h2 id="about">About</h2>
+        <p>Insert informational content here. Add more paragraphs to test scrolling.</p>
+
+        <!-- filler to allow scrolling -->
+        <div style="height:1400px; background:linear-gradient(180deg,#fff,#f1f7fb); border-radius:6px; margin-top:1rem;"></div>
+      </section>
+    </main>
+
+    <!-- Bootstrap JS bundle (Popper included) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
