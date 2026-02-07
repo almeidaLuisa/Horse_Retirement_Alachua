@@ -1,24 +1,20 @@
 <!-- this is he beggining of our home page for the horse retirement website -->
-
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Horse Retirement Alachua — Home</title>
-    <!-- Bootstrap CSS (CDN) -->
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
 
     <style>
-      /* keep content visible when navbar is fixed */
       body { padding-top: 76px; }
 
-      /* custom navbar look */
       .navbar-custom {
         background: linear-gradient(90deg, #036ea3f2, #79aed4);
         box-shadow: 0 6px 18px rgba(2,48,71,0.18);
         backdrop-filter: blur(6px);
-        transition: background-color 200ms ease, transform 120ms ease;
       }
 
       .navbar-custom .navbar-brand {
@@ -29,36 +25,39 @@
       .nav-link { color: rgba(255,255,255,0.9) !important; }
       .nav-link:hover { color: #fff !important; text-decoration: underline; }
 
-      .btn-cta {
-        background: #ffd166; color: #003049; font-weight: 600;
-      }
+      .btn-cta { background: #ffd166; color: #003049; font-weight: 600; }
 
-      /* subtle collapse shadow on mobile menu */
       .navbar-collapse { box-shadow: 0 4px 18px rgba(0,0,0,0.06); }
 
-      /* example hero styles */
       .hero { 
         padding: 6rem 1rem; 
         background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('images/Abby.jpg') center/cover no-repeat;
-        color: rgb(255, 255, 255);
+        color: #fff;
         min-height: 500px;
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .card-demo { max-width: 900px; margin: 0 auto; background: rgba(255,255,255,0.95); }
 
-      /* gallery thumbnails */
-      .gallery-img { width:100%; height:280px; object-fit:cover; border-radius:6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      .gallery-img {
+        width:100%;
+        height:280px;
+        object-fit:cover;
+        border-radius:6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+      }
+
       .gallery-container { text-align: center; margin-top: 2rem; }
     </style>
   </head>
-  <body>
 
-    <nav class="navbar navbar-expand-lg navbar-custom fixed-top">
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-custom fixed-top navbar-dark">
       <div class="container-fluid">
         <a class="navbar-brand text-white" href="#">Horse Retirement Alachua</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
           <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -67,7 +66,7 @@
             <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
             <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="horsesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Horses</a>
+              <a class="nav-link dropdown-toggle" href="#" id="horsesDropdown" role="button" data-bs-toggle="dropdown">Horses</a>
               <ul class="dropdown-menu" aria-labelledby="horsesDropdown">
                 <li><a class="dropdown-item" href="#list">All horses</a></li>
                 <li><a class="dropdown-item" href="#care">Care</a></li>
@@ -91,7 +90,6 @@
         <div class="container">
           <h1 class="display-6">Welcome to Alachua County Horse Retirement House</h1>
           <p class="lead">We provide lifelong care and retirement for horses in Alachua County.</p>
-          
         </div>
       </section>
 
@@ -99,11 +97,9 @@
         <h2 id="about">About</h2>
         <p>Insert informational content here. Add more paragraphs to test scrolling.</p>
 
-        <!-- Gallery: shows first 5 images from the `images/` folder -->
         <h3 class="mt-4">Gallery</h3>
-        <div class="row g-3 mt-2" id="gallery">
-          <p class="text-muted">Loading images…</p>
-        </div>
+        <div class="row g-3 mt-2" id="gallery"></div>
+
         <div class="gallery-container">
           <button class="btn btn-primary" id="seeMoreBtn" style="display:none;">See More</button>
         </div>
@@ -136,69 +132,63 @@
           </div>
         </div>
 
-        <!-- filler to allow scrolling -->
         <div style="height:900px; background:linear-gradient(180deg,#fff,#f1f7fb); border-radius:6px; margin-top:1rem;"></div>
       </section>
     </main>
 
-    <!-- Bootstrap JS bundle (Popper included) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
       (function () {
         const gallery = document.getElementById('gallery');
         const seeMoreBtn = document.getElementById('seeMoreBtn');
         const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
 
+        // ✅ Put your real image filenames here (exact spelling + extension)
+        const images = [
+          'Abby.jpg',
+          'Abe.jpg',
+          'Acero.jpg',
+          'Ahab.jpg',
+          'Alf.jpg',
+          'Annie.jpg',
+          'Bear.jpg'
+        ];
+
         if (!gallery) return;
 
-        // Fetch directory listing from /images/
-        fetch('images/')
-          .then(res => {
-            if (!res.ok) throw new Error('Directory listing not available');
-            return res.text();
-          })
-          .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const anchors = Array.from(doc.querySelectorAll('a')).map(a => a.getAttribute('href'));
-            // Filter: only image files, exclude parent dir (..), and remove query params
-            const images = anchors
-              .filter(h => h && h !== '../' && /\.(jpe?g|png|gif|webp)$/i.test(h.split('?')[0]))
-              .map(h => h.split('?')[0])
-              .sort();
+        if (images.length === 0) {
+          gallery.innerHTML = '<p class="text-muted">No images listed yet.</p>';
+          return;
+        }
 
-            if (images.length === 0) {
-              gallery.innerHTML = '<p class="text-muted">No images found in images/.</p>';
-              return;
-            }
+        gallery.innerHTML = '';
 
-            gallery.innerHTML = '';
+        const displayImages = images.slice(0, 5);
 
-            // Show only first 5 images
-            const displayImages = images.slice(0, 5);
-            displayImages.forEach(src => {
-              const col = document.createElement('div');
-              col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
-              const img = document.createElement('img');
-              img.src = 'images/' + src;
-              img.alt = src;
-              img.className = 'gallery-img img-fluid';
-              img.loading = 'lazy';
-              col.appendChild(img);
-              gallery.appendChild(col);
-            });
+        displayImages.forEach(name => {
+          const col = document.createElement('div');
+          col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
 
-            // Show "See More" button only if there are more than 5 images
-            if (images.length > 5) {
-              seeMoreBtn.style.display = 'inline-block';
-              seeMoreBtn.addEventListener('click', () => {
-                loginModal.show();
-              });
-            }
-          })
-          .catch(() => {
-            gallery.innerHTML = '<p class="text-muted">Unable to load images. Serve the site with a server (e.g., `python -m http.server`).</p>';
+          const img = document.createElement('img');
+          img.src = 'images/' + name;
+          img.alt = name;
+          img.className = 'gallery-img img-fluid';
+          img.loading = 'lazy';
+
+          // ✅ Click image to open full size in a new tab
+          img.addEventListener('click', () => {
+            window.open(img.src, '_blank');
           });
+
+          col.appendChild(img);
+          gallery.appendChild(col);
+        });
+
+        if (images.length > 5) {
+          seeMoreBtn.style.display = 'inline-block';
+          seeMoreBtn.addEventListener('click', () => loginModal.show());
+        }
       })();
     </script>
   </body>
