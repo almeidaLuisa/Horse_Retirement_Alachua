@@ -100,7 +100,6 @@
                 <th>Gender</th>
                 <th>Pasture</th>
                 <th>Notes</th>
-                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="horseTableBody">
@@ -147,10 +146,7 @@
                         <td>${horse.Gender || horse.gender || '-'}</td>
                         <td>${horse['Field Home'] || horse.pasture || '-'}</td>
                         <td>${horse.Notes || horse.general_notes || '-'}</td>
-                        <td class="action-buttons">
-                            <button class="btn-primary" onclick="event.stopPropagation(); editHorse(${JSON.stringify(horse)})">✏️ Edit</button>
-                            <button class="btn-danger" onclick="event.stopPropagation(); deleteHorse('${horse._id}')">🗑️ Delete</button>
-                        </td>
+                        <td class="action-buttons"></td>
                     </tr>
                 `;
                 tableBody.innerHTML += row;
