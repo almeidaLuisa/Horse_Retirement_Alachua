@@ -38,13 +38,11 @@ try:
     db = client[DB_NAME]
     
     # Collections
-    users_collection = db['users']  # Passwords stored here
-    user_tables_collection = db['User_Tables']  # User info (no password)
-    user_logins_collection = db['User_Logins']  # Login history
+    user_tables_collection = db['User_Tables']  # User info (name, email, role, etc - no password)
+    user_logins_collection = db['User_Logins']  # Login history + password credentials
     audits_collection = db['Audits']  # Audit trail
     
     # Create indexes
-    users_collection.create_index('email', unique=True)
     user_logins_collection.create_index('user_id')
     user_logins_collection.create_index('timestamp')
     audits_collection.create_index('timestamp')
@@ -151,17 +149,12 @@ def register():
             return jsonify({'error': 'Password must be at least 6 characters'}), 400
         
         # Check if user exists
-        if users_collection.find_one({'email': email}):
+        if user_tables_collection.find_one({'email': email}):
             return jsonify({'error': 'Email already registered'}), 409
         
-        # 1. Create password record in users collection
-        user_password_doc = {
-            'email': email,
-            'password': generate_password_hash(password),
-            'created_at': datetime.utcnow()
-        }
-        password_result = users_collection.insert_one(user_password_doc)
-        user_id = password_result.inserted_id
+        # Generate user_id for new user
+        from bson.objectid import ObjectId
+        user_id = ObjectId()
         
         # 2. Create user info record in User_Tables (no password)
         user_info_doc = {
@@ -179,7 +172,18 @@ def register():
         }
         user_tables_collection.insert_one(user_info_doc)
         
-        # 3. Log to audit trail
+        # 3. Store password credentials in User_Logins collection
+        login_doc = {
+            'user_id': user_id,
+            'email': email,
+            'password': generate_password_hash(password),
+            'timestamp': datetime.utcnow(),
+            'ip_address': 'REGISTRATION',
+            'action': 'REGISTER'
+        }
+        user_logins_collection.insert_one(login_doc)
+        
+        # 4. Log to audit trail
         log_audit(user_id, 'REGISTER', 'User_Tables', {'email': email, 'name': name})
         
         return jsonify({'message': 'User registered successfully', 'user_id': str(user_id)}), 201
@@ -197,23 +201,25 @@ def login():
         if not email or not password:
             return jsonify({'error': 'Email and password required'}), 400
         
-        user = users_collection.find_one({'email': email})
-        if not user or not check_password_hash(user['password'], password):
+        # Find user by email in User_Logins (password credentials)
+        login_cred = user_logins_collection.find_one({'email': email})
+        if not login_cred or not check_password_hash(login_cred['password'], password):
             return jsonify({'error': 'Invalid email or password'}), 401
         
-        user_id = user['_id']
+        user_id = login_cred['user_id']
         
         # Get user info from User_Tables
         user_info = user_tables_collection.find_one({'_id': user_id})
         if not user_info or not user_info.get('active'):
             return jsonify({'error': 'User account is inactive'}), 403
         
-        # 1. Log login to User_Logins collection
+        # 1. Log login event to User_Logins collection
         login_record = {
             'user_id': user_id,
             'email': email,
             'timestamp': datetime.utcnow(),
-            'ip_address': request.remote_addr
+            'ip_address': request.remote_addr,
+            'action': 'LOGIN'
         }
         user_logins_collection.insert_one(login_record)
         
