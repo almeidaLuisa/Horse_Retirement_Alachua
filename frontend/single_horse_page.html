@@ -478,21 +478,41 @@
 
     <div class="section">
         <h2>Action Taken</h2>
-        <table>
-            <tr>
-                <th>Date</th>
-                <th>Treatment Administered</th>
-                <th>Completed By</th>
-                <th>Notes</th>
-                <th>Actions</th>
-            </tr>
-            <tr>
-                <td contenteditable="true">MM/DD/YYYY</td>
-                <td contenteditable="true">Treatment name</td>
-                <td contenteditable="true">Staff name</td>
-                <td contenteditable="true">Any notes...</td>
-                <td><span class="icon" title="Edit"><i class="bi bi-pencil"></i></span> <span class="icon" title="Delete"><i class="bi bi-trash"></i></span></td>
-            </tr>
+
+        <!-- Log action form (editors/admins only) -->
+        <div id="actionAddForm" style="display:none; margin-bottom:1rem; padding:1rem; background:#f9f9f9; border-radius:10px;">
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:end;">
+                <div style="flex:1; min-width:180px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Treatment Administered</label>
+                    <select id="actionTreatmentSelect" class="form-control" style="font-size:0.9rem;">
+                        <option value="">— Select treatment —</option>
+                        <!-- Populated dynamically from this horse's treatments -->
+                    </select>
+                </div>
+                <div style="flex:2; min-width:200px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Notes <span style='color:#999;font-weight:400;'>(optional)</span></label>
+                    <input type="text" id="actionNotes" class="form-control" placeholder="e.g. Given 10cc oral dose" style="font-size:0.9rem;">
+                </div>
+                <button onclick="addAction()" style="height:38px; padding:0 1.25rem; background:linear-gradient(135deg,#9CD479,#79AED4); color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer;">
+                    <i class="bi bi-plus-circle"></i> Log
+                </button>
+            </div>
+            <p id="noTreatmentsHint" style="display:none; color:#999; font-size:0.85rem; margin:0.5rem 0 0;"><i class="bi bi-info-circle"></i> Add treatments above first, then you can log actions here.</p>
+        </div>
+
+        <table id="actionsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Treatment Administered</th>
+                    <th>Completed By</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="actionsTableBody">
+                <tr><td colspan="5" style="text-align:center; color:#999;">Loading actions…</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -758,6 +778,7 @@
         if (role === 'admin' || role === 'editor') {
           document.getElementById('docUploadForm').style.display = 'block';
           document.getElementById('treatmentAddForm').style.display = 'block';
+          document.getElementById('actionAddForm').style.display = 'block';
         }
       })();
 
@@ -788,8 +809,11 @@
           const treatments = await res.json();
           if (!treatments.length) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">No treatments recorded yet.</td></tr>';
+            populateActionTreatmentSelect([]);
             return;
           }
+          // Also populate the Action Taken treatment dropdown
+          populateActionTreatmentSelect(treatments);
           const role = (localStorage.getItem('user_role') || '').toLowerCase();
           const canDelete = role === 'admin' || role === 'editor';
           tbody.innerHTML = treatments.map(t => {
@@ -880,6 +904,121 @@
 
       // Load treatments on page load
       loadTreatments();
+
+      // ═══════════════════════════════════════
+      //        ACTION TAKEN TABLE
+      // ═══════════════════════════════════════
+
+      function populateActionTreatmentSelect(treatments) {
+        const sel = document.getElementById('actionTreatmentSelect');
+        const hint = document.getElementById('noTreatmentsHint');
+        // Keep the first default option
+        sel.innerHTML = '<option value="">— Select treatment —</option>';
+        if (!treatments.length) {
+          hint.style.display = 'block';
+          return;
+        }
+        hint.style.display = 'none';
+        // Get unique treatment types
+        const types = [...new Set(treatments.map(t => t.treatment_type).filter(Boolean))];
+        types.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t;
+          sel.appendChild(opt);
+        });
+      }
+
+      async function loadActions() {
+        if (!horseName) return;
+        const tbody = document.getElementById('actionsTableBody');
+        try {
+          const res = await fetch(`/api/actions/${encodeURIComponent(horseName)}`);
+          const actions = await res.json();
+          if (!actions.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">No actions logged yet.</td></tr>';
+            return;
+          }
+          const role = (localStorage.getItem('user_role') || '').toLowerCase();
+          const canDelete = role === 'admin' || role === 'editor';
+          tbody.innerHTML = actions.map(a => {
+            const dt = a.datetime_last_updated ? new Date(a.datetime_last_updated).toLocaleString() : '—';
+            const user = a.user_that_made_change || '—';
+            return `<tr>
+              <td>${dt}</td>
+              <td>${a.treatment || '—'}</td>
+              <td>${user}</td>
+              <td>${a.action_taken_notes || '—'}</td>
+              <td>
+                ${canDelete ? `<span class="icon" title="Delete" style="cursor:pointer;color:#c62828;" onclick="deleteAction('${a._id}','${(a.treatment || '').replace(/'/g, "\\'")}');"><i class="bi bi-trash"></i></span>` : ''}
+              </td>
+            </tr>`;
+          }).join('');
+        } catch (e) {
+          console.error('Error loading actions:', e);
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c62828;">Failed to load actions.</td></tr>';
+        }
+      }
+
+      async function addAction() {
+        if (!isAdmin()) return;
+        const sel = document.getElementById('actionTreatmentSelect');
+        const notesInput = document.getElementById('actionNotes');
+        const treatment = sel.value;
+
+        if (!treatment) {
+          showToast('Please select a treatment.', '#c62828');
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/actions/${encodeURIComponent(horseName)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              treatment: treatment,
+              notes: notesInput.value.trim(),
+              user_email: localStorage.getItem('user_email') || 'Unknown'
+            })
+          });
+          if (res.ok) {
+            showToast('Action logged!', '#388e3c');
+            sel.value = '';
+            notesInput.value = '';
+            loadActions();
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not log action.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Add action error:', e);
+          showToast('Server error.', '#c62828');
+        }
+      }
+
+      async function deleteAction(actionId, treatmentName) {
+        if (!isAdmin()) return;
+        if (!confirm(`Delete action "${treatmentName}"? This cannot be undone.`)) return;
+        try {
+          const userEmail = localStorage.getItem('user_email') || 'Unknown';
+          const res = await fetch(`/api/actions/${encodeURIComponent(horseName)}/${actionId}?user_email=${encodeURIComponent(userEmail)}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            showToast('Action deleted.', '#388e3c');
+            loadActions();
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not delete.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Delete action error:', e);
+          showToast('Server error.', '#c62828');
+        }
+      }
+
+      // Load actions on page load
+      loadActions();
 
       // ═══════════════════════════════════════
       //        DOCUMENTS TABLE

@@ -41,6 +41,7 @@ try:
     daily_obs_collection = db['DailyObs_Tables']
     docs_collection = db['Docs_Tables']
     treatment_collection = db['Horse_Treatment_Tables']
+    actions_collection = db['Actions_Tables']
     
     print(f"✅ UNIFIED SERVER CONNECTED to {DB_NAME}")
 except Exception as e:
@@ -975,6 +976,80 @@ def delete_horse_treatment(horse_name, treatment_id):
         })
 
         return jsonify({'message': 'Treatment deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==========================================
+#      SECTION 2.8: ACTIONS TAKEN
+# ==========================================
+
+@app.route('/api/actions/<horse_name>', methods=['GET'])
+def get_horse_actions(horse_name):
+    """Get all action-taken records for a specific horse."""
+    try:
+        actions = list(actions_collection.find({'horse_name': horse_name}).sort('datetime_last_updated', -1))
+        for a in actions:
+            a['_id'] = str(a['_id'])
+        return jsonify(actions), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/actions/<horse_name>', methods=['POST'])
+def add_horse_action(horse_name):
+    """Log an action taken (treatment administered) for a horse."""
+    try:
+        data = request.json
+        treatment = data.get('treatment', '').strip()
+        notes = data.get('notes', '').strip()
+        user_email = data.get('user_email', 'Unknown')
+
+        if not treatment:
+            return jsonify({'error': 'Treatment is required.'}), 400
+
+        doc = {
+            'horse_name': horse_name,
+            'treatment': treatment,
+            'action_taken_notes': notes,
+            'datetime_last_updated': datetime.utcnow(),
+            'user_that_made_change': user_email
+        }
+
+        result = actions_collection.insert_one(doc)
+
+        audit_collection.insert_one({
+            'action': 'ADD_ACTION',
+            'table': 'Actions_Tables',
+            'user_id': user_email,
+            'details': f"Logged action '{treatment}' for {horse_name}: {notes[:80] if notes else '(no notes)'}",
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Action logged', '_id': str(result.inserted_id)}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/actions/<horse_name>/<action_id>', methods=['DELETE'])
+def delete_horse_action(horse_name, action_id):
+    """Delete an action-taken record."""
+    try:
+        user_email = request.args.get('user_email', 'Unknown')
+        rec = actions_collection.find_one({'_id': ObjectId(action_id), 'horse_name': horse_name})
+        if not rec:
+            return jsonify({'error': 'Action not found.'}), 404
+
+        actions_collection.delete_one({'_id': ObjectId(action_id)})
+
+        audit_collection.insert_one({
+            'action': 'DELETE_ACTION',
+            'table': 'Actions_Tables',
+            'user_id': user_email,
+            'details': f"Deleted action '{rec.get('treatment', '')}' for {horse_name}",
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Action deleted'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
