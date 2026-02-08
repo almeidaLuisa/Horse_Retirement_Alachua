@@ -70,7 +70,7 @@ class AuthManager {
         if (response.status === 401) {
             // Unauthorized - clear auth and redirect to login
             this.clearAuth();
-            window.location.href = 'login_page.html';
+            window.location.href = 'home_page.html';
         }
 
         return response;
@@ -81,7 +81,7 @@ class AuthManager {
      */
     requireAuth() {
         if (!this.isLoggedIn()) {
-            window.location.href = 'login_page.html';
+            window.location.href = 'home_page.html';
         }
     }
 }
@@ -113,6 +113,6 @@ async function logout() {
         console.error('Logout error:', error);
     } finally {
         auth.clearAuth();
-        window.location.href = 'login_page.html';
+        window.location.href = 'home_page.html';
     }
 }

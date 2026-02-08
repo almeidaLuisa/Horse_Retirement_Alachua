@@ -81,7 +81,15 @@
         <div class="col-md-8">
           
           <div id="viewerAlert" class="alert alert-info d-none" role="alert">
-            <i class="bi bi-info-circle-fill me-2"></i> You have <strong>Viewer</strong> permissions.
+            <i class="bi bi-eye-fill me-2"></i> You have <strong>Viewer</strong> permissions. You can browse horses and observations but cannot make changes.
+          </div>
+
+          <div id="editorAlert" class="alert alert-warning d-none" role="alert">
+            <i class="bi bi-pencil-fill me-2"></i> You have <strong>Editor</strong> permissions. You can add/edit horses and manage observations.
+          </div>
+
+          <div id="adminAlert" class="alert alert-success d-none" role="alert">
+            <i class="bi bi-shield-fill-check me-2"></i> You have <strong>Admin</strong> permissions. You have full access to all features.
           </div>
 
           <div class="card profile-card p-4">
@@ -140,7 +148,7 @@
       const userEmail = localStorage.getItem('user_email');
       
       if (!userEmail) {
-          window.location.href = 'login_page.html';
+          window.location.href = 'home_page.html';
       }
 
       // 2. FETCH DATA
@@ -173,6 +181,10 @@
                   const role = (data.role || '').toLowerCase();
                   if (role === 'user' || role === 'viewer') {
                       document.getElementById('viewerAlert').classList.remove('d-none');
+                  } else if (role === 'editor') {
+                      document.getElementById('editorAlert').classList.remove('d-none');
+                  } else if (role === 'admin') {
+                      document.getElementById('adminAlert').classList.remove('d-none');
                   }
 
               } else {
@@ -188,7 +200,7 @@
           localStorage.removeItem('user_name');
           localStorage.removeItem('user_email');
           localStorage.removeItem('user_role');
-          window.location.href = 'login_page.html';
+          window.location.href = 'home_page.html';
       }
 
       // Start
