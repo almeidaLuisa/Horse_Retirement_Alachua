@@ -189,6 +189,44 @@
         margin-bottom: 0.5rem;
       }
       .horse-info { flex: 1; min-width: 280px; }
+
+      /* Horse details grid */
+      .horse-details {
+        flex: 1;
+        min-width: 260px;
+        max-width: 360px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1rem;
+        align-items: center;
+      }
+      .horse-details label {
+        font-weight: 700;
+        color: var(--green-dark);
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+      .horse-details input {
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.88rem;
+        padding: 6px 10px;
+        border: 2px solid var(--blue-light);
+        border-radius: 8px;
+        background: var(--blue-light);
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+      .horse-details input:hover {
+        background: #d4f1f4;
+        border-color: var(--blue-dark);
+      }
+      .horse-details input:focus {
+        outline: none;
+        border-color: var(--blue-dark);
+        background: #d4f1f4;
+      }
+      .horse-notes-col { flex: 1; min-width: 280px; }
       .horse-name-field {
         font-family: 'Nunito', sans-serif;
         font-size: 1.5rem;
@@ -221,7 +259,31 @@
             <div class="horse-photo">
                 <img id="horseImage" src="" alt="Horse photo">
             </div>
-            <div class="horse-info">
+            <div class="horse-details" id="horseDetails">
+                <label>Breed</label>
+                <input id="detailBreed" type="text" value="—" />
+                <label>Gender</label>
+                <input id="detailGender" type="text" value="—" />
+                <label>Age</label>
+                <input id="detailAge" type="text" value="—" />
+                <label>Field Home</label>
+                <input id="detailFieldHome" type="text" value="—" />
+                <label>Medical</label>
+                <input id="detailMedical" type="text" value="—" />
+                <label>RHH Arrival</label>
+                <input id="detailArrival" type="text" value="—" />
+                <label>Field of Dreams</label>
+                <input id="detailFOD" type="text" value="—" />
+                <label>Last Farrier</label>
+                <input id="detailFarrier" type="text" value="—" />
+                <label>Farrier Notes</label>
+                <input id="detailFarrierNotes" type="text" value="—" />
+                <label>Treatment</label>
+                <input id="detailTreatment" type="text" value="—" />
+                <label>Treatment Date</label>
+                <input id="detailTreatmentDate" type="text" value="—" />
+            </div>
+            <div class="horse-notes-col">
                 <h2>Notes</h2>
                 <div class="editable" id="horseNotes" contenteditable="true">Loading notes...</div>
             </div>
@@ -308,9 +370,22 @@
               return dbName === horseName.trim().toLowerCase();
             });
             if (horse) {
+              // Populate notes
               const notes = horse.Notes || horse.general_notes || '';
-              const notesEl = document.getElementById('horseNotes');
-              notesEl.textContent = notes || 'No notes available.';
+              document.getElementById('horseNotes').textContent = notes || 'No notes available.';
+
+              // Populate detail fields
+              document.getElementById('detailBreed').value = horse.Breed || horse.breed || '—';
+              document.getElementById('detailGender').value = horse.Gender || horse.gender || '—';
+              document.getElementById('detailAge').value = horse['Age (in 2026)'] || horse.Age || horse.age || '—';
+              document.getElementById('detailFieldHome').value = horse['Field Home'] || horse.pasture || '—';
+              document.getElementById('detailMedical').value = horse['Medical Conditions'] || '—';
+              document.getElementById('detailArrival').value = horse['RHH Arrival'] || '—';
+              document.getElementById('detailFOD').value = horse['Field of Dreams'] || '—';
+              document.getElementById('detailFarrier').value = horse['Last Farrier Date'] || '—';
+              document.getElementById('detailFarrierNotes').value = horse['Farrier notes'] || '—';
+              document.getElementById('detailTreatment').value = horse['Treatment Description'] || '—';
+              document.getElementById('detailTreatmentDate').value = horse['Treatment Date'] || '—';
             } else {
               document.getElementById('horseNotes').textContent = 'Horse not found in database.';
             }
