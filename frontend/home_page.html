@@ -104,34 +104,6 @@
           <button class="btn btn-primary" id="seeMoreBtn" style="display:none;">See More</button>
         </div>
 
-        <!-- Login Modal -->
-        <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-          <div class="modal-dialog">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title" id="loginModalLabel"> Log In </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <form>
-                  <div class="mb-3">
-                    <label for="emailInput" class="form-label">Email address</label>
-                    <input type="email" class="form-control" id="emailInput" placeholder="Enter your email" />
-                  </div>
-                  <div class="mb-3">
-                    <label for="passwordInput" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="passwordInput" placeholder="Enter your password" />
-                  </div>
-                </form>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Login</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div style="height:900px; background:linear-gradient(180deg,#fff,#f1f7fb); border-radius:6px; margin-top:1rem;"></div>
       </section>
     </main>
@@ -142,8 +114,6 @@
   (function () {
     const gallery = document.getElementById('gallery');
     const seeMoreBtn = document.getElementById('seeMoreBtn');
-    const loginModalEl = document.getElementById('loginModal');
-    const loginModal = loginModalEl ? new bootstrap.Modal(loginModalEl) : null;
 
     
     const images = [
@@ -191,10 +161,12 @@
       gallery.appendChild(col);
     });
 
-    // show modal if more than 5
-    if (images.length > 5 && seeMoreBtn && loginModal) {
+    // If there are more than 5 images, show button and redirect to the login page
+    if (images.length > 5 && seeMoreBtn) {
       seeMoreBtn.style.display = 'inline-block';
-      seeMoreBtn.onclick = () => loginModal.show();
+      seeMoreBtn.onclick = () => {
+        window.location.href = 'login_page.html';
+      };
     } else if (seeMoreBtn) {
       seeMoreBtn.style.display = 'none';
     }
