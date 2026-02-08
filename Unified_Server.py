@@ -352,6 +352,7 @@ def add_daily_obs():
             "status": data.get('status', 'pending'),
             "horse_id": data.get('horse_id', ''),
             "created_by": data.get('created_by', 'Anonymous'),
+            "due_date": data.get('due_date', None),
             "date": datetime.utcnow()
         }
         
@@ -367,6 +368,23 @@ def delete_daily_obs(id):
         if result.deleted_count == 0:
             return jsonify({"error": "Item not found"}), 404
         return jsonify({"message": "Item Deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/daily-obs/<id>', methods=['PATCH'])
+def toggle_daily_obs(id):
+    try:
+        data = request.json
+        update_fields = {}
+        for field in ['status', 'note', 'is_observation', 'is_todo', 'horse_id', 'due_date']:
+            if field in data:
+                update_fields[field] = data[field]
+        if update_fields:
+            daily_obs_collection.update_one(
+                {"_id": ObjectId(id)},
+                {"$set": update_fields}
+            )
+        return jsonify({"message": "Updated"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

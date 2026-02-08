@@ -211,6 +211,35 @@
       .tag-pending  { background: #fff3e0; color: #e65100; }
       .tag-complete { background: var(--green-light); color: var(--green-dark); }
 
+      /* ── Custom checkbox for to-do ── */
+      .todo-check {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        border: 2.5px solid #bdbdbd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.25s ease;
+        background: #fff;
+      }
+      .todo-check:hover { border-color: var(--green-dark); background: var(--green-light); }
+      .todo-check.checked {
+        border-color: var(--green-dark);
+        background: var(--green-dark);
+        color: #fff;
+      }
+      .todo-check.checked i { display: block; }
+      .todo-check i { display: none; font-size: 0.7rem; }
+      .item-row.completed .title {
+        text-decoration: line-through;
+        color: #9e9e9e;
+      }
+      .item-row.completed .meta {
+        color: #bdbdbd;
+      }
+
       /* ── Horse Database card ── */
       .horse-db-link {
         display: flex;
@@ -395,8 +424,18 @@
                 <label class="form-check-label" for="isObs">Observation</label>
               </div>
               <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="isTodo">
+                <input class="form-check-input" type="checkbox" id="isTodo" onchange="toggleDueDateField()">
                 <label class="form-check-label" for="isTodo">To-Do</label>
+              </div>
+            </div>
+            <div id="dueDateSection" class="mb-3 d-none">
+              <label class="form-label">Complete by</label>
+              <div class="d-flex align-items-center gap-2">
+                <input type="date" id="obsDueDate" class="form-control" style="flex:1;">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="noDueDate" checked onchange="toggleDueDateInput()">
+                  <label class="form-check-label small" for="noDueDate">No due date</label>
+                </div>
               </div>
             </div>
             <div class="mb-3">
@@ -416,6 +455,60 @@
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="button" class="btn btn-primary" id="btnSaveObs">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDIT OBS MODAL -->
+    <div class="modal fade" id="editObsModal" tabindex="-1" aria-labelledby="editObsModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editObsModalLabel">Edit Observation / To-Do</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editObsId">
+            <div class="mb-3">
+              <label class="form-label">Note</label>
+              <textarea id="editObsNote" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="d-flex gap-3 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="editIsObs">
+                <label class="form-check-label" for="editIsObs">Observation</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="editIsTodo" onchange="toggleEditDueDateField()">
+                <label class="form-check-label" for="editIsTodo">To-Do</label>
+              </div>
+            </div>
+            <div id="editDueDateSection" class="mb-3 d-none">
+              <label class="form-label">Complete by</label>
+              <div class="d-flex align-items-center gap-2">
+                <input type="date" id="editObsDueDate" class="form-control" style="flex:1;">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="editNoDueDate" onchange="toggleEditDueDateInput()">
+                  <label class="form-check-label small" for="editNoDueDate">No due date</label>
+                </div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              <select id="editObsStatus" class="form-select">
+                <option value="pending">Pending</option>
+                <option value="complete">Complete</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Horse ID (optional)</label>
+              <input id="editHorseId" class="form-control">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveEditObs()">Save Changes</button>
           </div>
         </div>
       </div>
@@ -533,6 +626,7 @@
           const badge = document.getElementById('dailyObsBadge');
           listContainer.innerHTML = '';
           badge.innerText = items.length + ' items';
+          allObsItems = items; // Store for edit modal
 
           // Update pending task count in Quick Stats
           const pendingCount = items.filter(i => i.is_todo && i.status !== 'complete').length;
@@ -541,12 +635,13 @@
           items.forEach(item => {
             const isTodo = item.is_todo;
             const status = item.status; 
+            const isComplete = status === 'complete';
             
             // Icon Logic
             let iconClass = 'bi bi-chat-left-text';
             let iconBg = 'background:#e3f2fd; color:#1565c0;';
             if (isTodo) {
-              if (status === 'complete') {
+              if (isComplete) {
                 iconClass = 'bi bi-check-circle-fill';
                 iconBg = 'background:#e8f5e9; color:#388e3c;';
               } else {
@@ -558,20 +653,41 @@
             // Tag Logic
             let tagHtml = '';
             if (isTodo) {
-              if (status === 'complete') tagHtml = '<span class="tag tag-complete">Done</span>';
+              if (isComplete) tagHtml = '<span class="tag tag-complete">Done</span>';
               else tagHtml = '<span class="tag tag-pending">Pending</span>';
             }
 
+            // Due date display
+            let dueHtml = '';
+            if (isTodo && item.due_date) {
+              const due = new Date(item.due_date + 'T00:00:00');
+              const today = new Date(); today.setHours(0,0,0,0);
+              const isOverdue = !isComplete && due < today;
+              dueHtml = `<span class="tag" style="background:${isOverdue ? '#fce4ec' : '#e3f2fd'};color:${isOverdue ? '#c62828' : '#1565c0'};">
+                <i class="bi bi-calendar-event"></i> ${due.toLocaleDateString()}</span>`;
+            }
+
+            // Checkbox for to-do items
+            let checkboxHtml = '';
+            if (isTodo) {
+              checkboxHtml = `<div class="todo-check ${isComplete ? 'checked' : ''}" onclick="toggleComplete('${item._id}', ${isComplete})" title="${isComplete ? 'Mark pending' : 'Mark complete'}">
+                <i class="bi bi-check"></i>
+              </div>`;
+            }
+
             const html = `
-            <div class="item-row">
-              <div class="item-icon" style="${iconBg}"><i class="${iconClass}"></i></div>
+            <div class="item-row ${isTodo && isComplete ? 'completed' : ''}">
+              ${isTodo ? checkboxHtml : `<div class="item-icon" style="${iconBg}"><i class="${iconClass}"></i></div>`}
               <div class="item-text">
                 <div class="title">${item.note}</div>
                 <div class="meta">
                   Horse: ${item.horse_id || 'N/A'} • ${new Date(item.date).toLocaleDateString()}
-                  ${tagHtml}
+                  ${tagHtml} ${dueHtml}
                 </div>
               </div>
+              <button class="btn btn-sm" onclick="openEditObs('${item._id}')" style="border:none;color:#78909c;" title="Edit">
+                <i class="bi bi-pencil"></i>
+              </button>
               <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('${item._id}')" style="border:none;">
                 <i class="bi bi-trash"></i>
               </button>
@@ -591,6 +707,14 @@
       btnAddObs.addEventListener('click', () => {
         if (!checkEditor()) return;
         document.getElementById('obsNote').value = '';
+        document.getElementById('isObs').checked = true;
+        document.getElementById('isTodo').checked = false;
+        document.getElementById('obsStatus').value = 'pending';
+        document.getElementById('horseId').value = '';
+        document.getElementById('obsDueDate').value = '';
+        document.getElementById('obsDueDate').disabled = true;
+        document.getElementById('noDueDate').checked = true;
+        document.getElementById('dueDateSection').classList.add('d-none');
         document.getElementById('obsSuccess').classList.add('d-none');
         addObsModal.show();
       });
@@ -602,6 +726,8 @@
         const status = document.getElementById('obsStatus').value;
         const horse_id = document.getElementById('horseId').value;
         const created_by = localStorage.getItem('user_name');
+        const noDue = document.getElementById('noDueDate').checked;
+        const due_date = (!noDue && todo) ? document.getElementById('obsDueDate').value : null;
 
         if (!note) return alert("Note required");
 
@@ -609,7 +735,7 @@
           const res = await fetch(`${API_URL}/api/daily-obs`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({note, obs, todo, status, horse_id, created_by})
+            body: JSON.stringify({note, obs, todo, status, horse_id, created_by, due_date})
           });
           if (res.ok) {
             document.getElementById('obsSuccess').classList.remove('d-none');
@@ -630,6 +756,98 @@
         try {
           await fetch(`${API_URL}/api/daily-obs/${id}`, {method: 'DELETE'});
           loadDailyObs();
+        } catch(e) { console.error(e); }
+      }
+
+      // TOGGLE COMPLETE
+      async function toggleComplete(id, currentlyComplete) {
+        if (!checkEditor()) return;
+        const newStatus = currentlyComplete ? 'pending' : 'complete';
+        try {
+          await fetch(`${API_URL}/api/daily-obs/${id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: newStatus })
+          });
+          loadDailyObs();
+        } catch(e) { console.error(e); }
+      }
+
+      // DUE DATE TOGGLE (Add modal)
+      function toggleDueDateField() {
+        const section = document.getElementById('dueDateSection');
+        if (document.getElementById('isTodo').checked) section.classList.remove('d-none');
+        else section.classList.add('d-none');
+      }
+      function toggleDueDateInput() {
+        document.getElementById('obsDueDate').disabled = document.getElementById('noDueDate').checked;
+        if (document.getElementById('noDueDate').checked) document.getElementById('obsDueDate').value = '';
+      }
+
+      // DUE DATE TOGGLE (Edit modal)
+      function toggleEditDueDateField() {
+        const section = document.getElementById('editDueDateSection');
+        if (document.getElementById('editIsTodo').checked) section.classList.remove('d-none');
+        else section.classList.add('d-none');
+      }
+      function toggleEditDueDateInput() {
+        document.getElementById('editObsDueDate').disabled = document.getElementById('editNoDueDate').checked;
+        if (document.getElementById('editNoDueDate').checked) document.getElementById('editObsDueDate').value = '';
+      }
+
+      // EDIT OBS
+      let allObsItems = [];
+      const editObsModal = new bootstrap.Modal(document.getElementById('editObsModal'));
+
+      function openEditObs(id) {
+        if (!checkEditor()) return;
+        const item = allObsItems.find(i => i._id === id);
+        if (!item) return;
+        document.getElementById('editObsId').value = id;
+        document.getElementById('editObsNote').value = item.note || '';
+        document.getElementById('editIsObs').checked = !!item.is_observation;
+        document.getElementById('editIsTodo').checked = !!item.is_todo;
+        document.getElementById('editObsStatus').value = item.status || 'pending';
+        document.getElementById('editHorseId').value = item.horse_id || '';
+        // Due date
+        if (item.is_todo) {
+          document.getElementById('editDueDateSection').classList.remove('d-none');
+          if (item.due_date) {
+            document.getElementById('editObsDueDate').value = item.due_date;
+            document.getElementById('editObsDueDate').disabled = false;
+            document.getElementById('editNoDueDate').checked = false;
+          } else {
+            document.getElementById('editObsDueDate').value = '';
+            document.getElementById('editObsDueDate').disabled = true;
+            document.getElementById('editNoDueDate').checked = true;
+          }
+        } else {
+          document.getElementById('editDueDateSection').classList.add('d-none');
+        }
+        editObsModal.show();
+      }
+
+      async function saveEditObs() {
+        const id = document.getElementById('editObsId').value;
+        const note = document.getElementById('editObsNote').value;
+        const is_observation = document.getElementById('editIsObs').checked;
+        const is_todo = document.getElementById('editIsTodo').checked;
+        const status = document.getElementById('editObsStatus').value;
+        const horse_id = document.getElementById('editHorseId').value;
+        const noDue = document.getElementById('editNoDueDate').checked;
+        const due_date = (!noDue && is_todo) ? document.getElementById('editObsDueDate').value : null;
+
+        if (!note) return alert('Note required');
+        try {
+          const res = await fetch(`${API_URL}/api/daily-obs/${id}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ note, is_observation, is_todo, status, horse_id, due_date })
+          });
+          if (res.ok) {
+            editObsModal.hide();
+            loadDailyObs();
+          }
         } catch(e) { console.error(e); }
       }
 
