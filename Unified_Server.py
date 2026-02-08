@@ -152,6 +152,39 @@ def get_user_profile():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/user/profile', methods=['PUT'])
+def update_user_profile():
+    try:
+        data = request.json
+        email = data.get('email')
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        user = user_logins.find_one({'email': email})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        update_fields = {}
+        if 'first_name' in data: update_fields['first_name'] = data['first_name']
+        if 'last_name' in data: update_fields['last_name'] = data['last_name']
+        if 'phone' in data: update_fields['phone'] = data['phone']
+
+        if update_fields:
+            user_logins.update_one({'email': email}, {'$set': update_fields})
+
+        # Audit log
+        audit_collection.insert_one({
+            'action': 'UPDATE_PROFILE',
+            'table': 'User_Logins',
+            'user_id': email,
+            'details': update_fields,
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Profile updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 # ==========================================
 #      SECTION 2: HORSE MANAGEMENT

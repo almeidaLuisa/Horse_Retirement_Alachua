@@ -93,7 +93,15 @@
           </div>
 
           <div class="card profile-card p-4">
-            <h4 class="mb-4 text-secondary"><i class="bi bi-person-lines-fill me-2"></i>Account Details</h4>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h4 class="mb-0 text-secondary"><i class="bi bi-person-lines-fill me-2"></i>Account Details</h4>
+              <div>
+                <button class="btn btn-outline-primary btn-sm" id="btnEdit" onclick="enableEditing()"><i class="bi bi-pencil me-1"></i>Edit</button>
+                <button class="btn btn-success btn-sm d-none" id="btnSave" onclick="saveProfile()"><i class="bi bi-check-lg me-1"></i>Save</button>
+                <button class="btn btn-outline-secondary btn-sm d-none" id="btnCancel" onclick="cancelEditing()"><i class="bi bi-x-lg me-1"></i>Cancel</button>
+              </div>
+            </div>
+            <div id="saveStatus" class="alert d-none mb-3"></div>
             
             <form>
               <div class="row mb-3">
@@ -195,7 +203,88 @@
           }
       }
 
-      // 3. LOGOUT
+      // 3. EDIT PROFILE
+      let originalValues = {};
+
+      function enableEditing() {
+          // Save original values for cancel
+          originalValues = {
+              firstName: document.getElementById('firstName').value,
+              lastName: document.getElementById('lastName').value,
+              phone: document.getElementById('phone').value
+          };
+          // Enable editable fields
+          document.getElementById('firstName').disabled = false;
+          document.getElementById('lastName').disabled = false;
+          document.getElementById('phone').disabled = false;
+          // Toggle buttons
+          document.getElementById('btnEdit').classList.add('d-none');
+          document.getElementById('btnSave').classList.remove('d-none');
+          document.getElementById('btnCancel').classList.remove('d-none');
+      }
+
+      function cancelEditing() {
+          // Restore original values
+          document.getElementById('firstName').value = originalValues.firstName;
+          document.getElementById('lastName').value = originalValues.lastName;
+          document.getElementById('phone').value = originalValues.phone;
+          // Disable fields
+          document.getElementById('firstName').disabled = true;
+          document.getElementById('lastName').disabled = true;
+          document.getElementById('phone').disabled = true;
+          // Toggle buttons
+          document.getElementById('btnEdit').classList.remove('d-none');
+          document.getElementById('btnSave').classList.add('d-none');
+          document.getElementById('btnCancel').classList.add('d-none');
+          document.getElementById('saveStatus').classList.add('d-none');
+      }
+
+      async function saveProfile() {
+          const updatedData = {
+              email: userEmail,
+              first_name: document.getElementById('firstName').value.trim(),
+              last_name: document.getElementById('lastName').value.trim(),
+              phone: document.getElementById('phone').value.trim()
+          };
+
+          const statusEl = document.getElementById('saveStatus');
+          try {
+              const response = await fetch(API_URL, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(updatedData)
+              });
+              const data = await response.json();
+              if (response.ok) {
+                  statusEl.className = 'alert alert-success mb-3';
+                  statusEl.innerText = 'Profile updated successfully!';
+                  statusEl.classList.remove('d-none');
+                  // Update localStorage name
+                  localStorage.setItem('user_name', updatedData.first_name);
+                  // Update welcome message
+                  document.getElementById('welcomeMsg').innerText = `Welcome, ${updatedData.first_name} ${updatedData.last_name}!`;
+                  // Disable fields & toggle buttons
+                  document.getElementById('firstName').disabled = true;
+                  document.getElementById('lastName').disabled = true;
+                  document.getElementById('phone').disabled = true;
+                  document.getElementById('btnEdit').classList.remove('d-none');
+                  document.getElementById('btnSave').classList.add('d-none');
+                  document.getElementById('btnCancel').classList.add('d-none');
+                  setTimeout(() => statusEl.classList.add('d-none'), 3000);
+              } else {
+                  statusEl.className = 'alert alert-danger mb-3';
+                  statusEl.innerText = data.error || 'Update failed.';
+                  statusEl.classList.remove('d-none');
+              }
+          } catch (err) {
+              console.error(err);
+              statusEl.className = 'alert alert-danger mb-3';
+              statusEl.innerText = 'Server error. Is the Flask server running?';
+              statusEl.classList.remove('d-none');
+          }
+      }
+
+      // 4. LOGOUT
       function logout() {
           localStorage.removeItem('user_name');
           localStorage.removeItem('user_email');
