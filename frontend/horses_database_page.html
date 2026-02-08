@@ -139,16 +139,17 @@
             }
 
             horses.forEach(horse => {
+                const horseName = horse.Name || horse.name || '?';
                 const row = `
-                    <tr>
-                        <td><strong>${horse.Name || horse.name || '?'}</strong></td>
+                    <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
+                        <td><strong>${horseName}</strong></td>
                         <td>${horse.Breed || horse.breed || '-'}</td>
                         <td>${horse.Gender || horse.gender || '-'}</td>
                         <td>${horse['Field Home'] || horse.location || '-'}</td>
                         <td>${horse.Notes || horse.general_notes || '-'}</td>
                         <td class="action-buttons">
-                            <button class="btn-primary" onclick='editHorse(${JSON.stringify(horse)})'>✏️ Edit</button>
-                            <button class="btn-danger" onclick="deleteHorse('${horse._id}')">🗑️ Delete</button>
+                            <button class="btn-primary" onclick="event.stopPropagation(); editHorse(${JSON.stringify(horse)})">✏️ Edit</button>
+                            <button class="btn-danger" onclick="event.stopPropagation(); deleteHorse('${horse._id}')">🗑️ Delete</button>
                         </td>
                     </tr>
                 `;

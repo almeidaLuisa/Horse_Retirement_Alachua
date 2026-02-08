@@ -188,6 +188,21 @@
         margin-bottom: 0.5rem;
       }
       .horse-info { flex: 1; min-width: 280px; }
+      .horse-name-field {
+        font-family: 'Nunito', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--green-dark);
+        border: none;
+        border-bottom: 3px solid var(--green-mid);
+        background: transparent;
+        padding: 0.3rem 0;
+        margin-bottom: 1rem;
+        width: 100%;
+        outline: none;
+      }
+      .horse-name-field::placeholder { color: var(--text-muted); font-weight: 600; }
+      .horse-name-field:focus { border-bottom-color: var(--blue-dark); }
     </style>
 </head>
 <body>
@@ -198,6 +213,7 @@
 
     <!-- Horse photo + observations side by side -->
     <div class="section">
+        <h1 class="horse-name-field" id="horseName">Horse Name</h1>
         <div class="horse-header">
             <div class="horse-photo">
                 <!-- Replace the placeholder below with an <img> tag, e.g.:
@@ -265,5 +281,15 @@
             </tr>
         </table>
     </div>
+
+    <script>
+      // Read horse name from URL and set the title
+      const params = new URLSearchParams(window.location.search);
+      const horseName = params.get('name');
+      if (horseName) {
+        document.getElementById('horseName').textContent = horseName;
+        document.title = horseName + ' — Horse Retirement Alachua';
+      }
+    </script>
 </body>
 </html>
