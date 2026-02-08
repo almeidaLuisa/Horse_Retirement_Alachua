@@ -217,6 +217,11 @@
             document.getElementById('regError').innerText = "";
         }
 
+        // Auto-show register if URL has #register
+        if (window.location.hash === '#register') {
+            showRegister();
+        }
+
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
