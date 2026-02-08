@@ -127,6 +127,10 @@
                         <small>New Volunteer?</small><br>
                         <button onclick="showRegister()" class="btn btn-link text-decoration-none" style="color: var(--primary-blue); font-weight: bold;">Create an account</button>
                     </div>
+
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-link p-0 text-decoration-none" style="color:var(--primary-blue);font-size:0.95rem;" onclick="showForgotPwModal()">Forgot Password?</button>
+                    </div>
                 </div>
 
                 <div id="registerSection" class="d-none">
@@ -181,10 +185,6 @@
                         <small>Already have an account?</small><br>
                         <button onclick="showLogin()" class="btn btn-link text-decoration-none" style="color: var(--primary-blue); font-weight: bold;">Back to Login</button>
                     </div>
-                </div>
-
-                <div class="text-end mb-2">
-                    <button type="button" class="btn btn-link p-0 text-decoration-none" style="color:var(--primary-blue);font-size:0.95rem;" onclick="showForgotPwModal()">Forgot Password?</button>
                 </div>
 
                 <!-- Forgot Password Modal -->
@@ -399,5 +399,6 @@
             }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

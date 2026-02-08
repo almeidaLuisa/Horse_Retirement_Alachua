@@ -418,6 +418,116 @@ def resend_verification():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/auth/request-password-reset', methods=['POST'])
+def request_password_reset():
+    """Generate a reset token, store it, and email a reset link."""
+    try:
+        data = request.json
+        email = data.get('email', '').strip().lower()
+        if not email:
+            return jsonify({'error': 'Email is required.'}), 400
+
+        user = user_logins.find_one({'email': email})
+        if not user:
+            # Don't reveal whether the email exists (security best practice)
+            return jsonify({'message': 'If that email is registered, a reset link has been sent.'}), 200
+
+        reset_token = secrets.token_urlsafe(32)
+        user_logins.update_one(
+            {'_id': user['_id']},
+            {'$set': {
+                'reset_token': reset_token,
+                'reset_token_created': datetime.utcnow()
+            }}
+        )
+
+        # Send the reset email
+        reset_url = f"{FRONTEND_URL}/reset_password.html?token={reset_token}"
+        first_name = user.get('first_name', 'there')
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Reset your password — Retirement Home for Horses'
+        msg['From'] = SMTP_EMAIL
+        msg['To'] = email
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:2rem;">
+            <div style="text-align:center;margin-bottom:1.5rem;">
+                <h1 style="color:#388e3c;margin:0;">🐴 Retirement Home for Horses</h1>
+            </div>
+            <h2 style="color:#333;">Hi {first_name},</h2>
+            <p style="color:#555;font-size:1rem;line-height:1.6;">
+                We received a request to reset your password. Click the button below to choose a new one:
+            </p>
+            <div style="text-align:center;margin:2rem 0;">
+                <a href="{reset_url}" style="background:linear-gradient(135deg,#9CD479,#79AED4);color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:bold;font-size:1rem;display:inline-block;">Reset My Password</a>
+            </div>
+            <p style="color:#999;font-size:0.85rem;text-align:center;">
+                This link expires in 1 hour. If you didn't request this, you can safely ignore this email.<br>
+                <a href="{reset_url}" style="color:#79AED4;">{reset_url}</a>
+            </p>
+            <hr style="border:none;border-top:1px solid #eee;margin:2rem 0;">
+            <p style="color:#bbb;font-size:0.75rem;text-align:center;">Retirement Home for Horses, Inc. — Alachua, FL</p>
+        </div>
+        """
+
+        msg.attach(MIMEText(html, 'html'))
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, email, msg.as_string())
+
+        print(f"📧 Password reset email sent to {email}")
+        return jsonify({'message': 'If that email is registered, a reset link has been sent.'}), 200
+    except Exception as e:
+        print(f"❌ Password reset request error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """Verify the reset token and set a new password."""
+    try:
+        data = request.json
+        token = data.get('token')
+        new_password = data.get('new_password')
+
+        if not token or not new_password:
+            return jsonify({'error': 'Token and new password are required.'}), 400
+
+        if len(new_password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+        user = user_logins.find_one({'reset_token': token})
+        if not user:
+            return jsonify({'error': 'Invalid or expired reset link.'}), 404
+
+        # Check if token is expired (1 hour)
+        token_created = user.get('reset_token_created')
+        if token_created:
+            elapsed = (datetime.utcnow() - token_created).total_seconds()
+            if elapsed > 3600:
+                return jsonify({'error': 'This reset link has expired. Please request a new one.'}), 410
+
+        # Update password and remove the reset token
+        user_logins.update_one(
+            {'_id': user['_id']},
+            {
+                '$set': {'password': generate_password_hash(new_password)},
+                '$unset': {'reset_token': '', 'reset_token_created': ''}
+            }
+        )
+
+        print(f"✅ Password reset successful for {user.get('email')}")
+        return jsonify({'message': 'Password reset successful! You can now log in.'}), 200
+    except Exception as e:
+        print(f"❌ Password reset error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/user/profile', methods=['GET'])
 def get_user_profile():
     try:
