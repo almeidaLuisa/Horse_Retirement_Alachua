@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
@@ -7,23 +7,24 @@ from bson.objectid import ObjectId
 from datetime import datetime
 import smtplib
 import secrets
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # --- CONFIGURATION ---
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend', static_url_path='')
 # Allow CORS for all domains
 CORS(app)
 
-# Email Configuration
-SMTP_EMAIL = 'luisalmeida0106@gmail.com'
-SMTP_APP_PASSWORD = 'oqrx kaip oppt pmtt'
+# Email Configuration (use env vars in production, fallback to local defaults)
+SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'luisalmeida0106@gmail.com')
+SMTP_APP_PASSWORD = os.environ.get('SMTP_APP_PASSWORD', 'oqrx kaip oppt pmtt')
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
-FRONTEND_URL = 'http://127.0.0.1:5500/frontend'  # Adjust to your Live Server URL
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:5000')  # In production, set to your Render URL
 
 # Database Connection
-URI = "mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary"
+URI = os.environ.get('MONGODB_URI', 'mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary')
 DB_NAME = "Data"
 
 try:
@@ -89,10 +90,19 @@ def send_verification_email(to_email, first_name, token):
         print(f"❌ Failed to send email: {e}")
         return False
 
-# --- ROOT ---
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({"status": "online", "message": "Unified Horse Server is Running!"})
+# --- SERVE FRONTEND ---
+@app.route('/')
+def serve_home():
+    return send_from_directory(app.static_folder, 'home_page.html')
+
+@app.route('/<path:path>')
+def serve_frontend(path):
+    # Only serve if the file actually exists in the frontend folder
+    file_path = os.path.join(app.static_folder, path)
+    if os.path.isfile(file_path):
+        return send_from_directory(app.static_folder, path)
+    # Otherwise return 404
+    return jsonify({"error": "Not found"}), 404
 
 
 # ==========================================
@@ -546,4 +556,5 @@ def toggle_daily_obs(id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
