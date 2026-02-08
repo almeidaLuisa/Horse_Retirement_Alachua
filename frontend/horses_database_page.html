@@ -72,7 +72,7 @@
         </div>
         <div>
             <label>Pasture / Field Home:</label>
-            <input type="text" id="location" placeholder="e.g. Buttercup's Meadow">
+            <input type="text" id="pasture" placeholder="e.g. Buttercup's Meadow">
         </div>
         <div style="grid-column: span 2;">
             <label>Medical / General Notes:</label>
@@ -88,7 +88,7 @@
     <h2>Current Herd</h2>
     <div class="search-wrap">
         <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" placeholder="Search by name, breed, location, notes..." autocomplete="off" />
+        <input type="text" id="searchInput" placeholder="Search by name, breed, pasture, notes..." autocomplete="off" />
         <div class="search-count" id="searchCount"></div>
     </div>
     <button class="btn-success" onclick="fetchHorses()">🔄 Refresh List</button>
@@ -98,7 +98,7 @@
                 <th>Name</th>
                 <th>Breed</th>
                 <th>Gender</th>
-                <th>Location</th>
+                <th>Pasture</th>
                 <th>Notes</th>
                 <th>Actions</th>
             </tr>
@@ -141,11 +141,11 @@
             horses.forEach(horse => {
                 const horseName = horse.Name || horse.name || '?';
                 const row = `
-                    <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
+                    <tr style="cursor:pointer;" onclick="window.pasture.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
                         <td><strong>${horseName}</strong></td>
                         <td>${horse.Breed || horse.breed || '-'}</td>
                         <td>${horse.Gender || horse.gender || '-'}</td>
-                        <td>${horse['Field Home'] || horse.location || '-'}</td>
+                        <td>${horse['Field Home'] || horse.pasture || '-'}</td>
                         <td>${horse.Notes || horse.general_notes || '-'}</td>
                         <td class="action-buttons">
                             <button class="btn-primary" onclick="event.stopPropagation(); editHorse(${JSON.stringify(horse)})">✏️ Edit</button>
@@ -164,7 +164,7 @@
             Name: document.getElementById('name').value,
             Breed: document.getElementById('breed').value,
             Gender: document.getElementById('gender').value,
-            'Field Home': document.getElementById('location').value,
+            'Field Home': document.getElementById('pasture').value,
             Notes: document.getElementById('notes').value
         };
 
@@ -226,7 +226,7 @@
         document.getElementById('name').value = horse.Name || horse.name || '';
         document.getElementById('breed').value = horse.Breed || horse.breed || '';
         document.getElementById('gender').value = horse.Gender || horse.gender || 'Gelding';
-        document.getElementById('location').value = horse['Field Home'] || horse.location || '';
+        document.getElementById('pasture').value = horse['Field Home'] || horse.pasture || '';
         document.getElementById('notes').value = horse.Notes || horse.general_notes || '';
         
         window.scrollTo(0, 0); // Scroll to top to see form
@@ -237,7 +237,7 @@
         document.getElementById('horseId').value = '';
         document.getElementById('name').value = '';
         document.getElementById('breed').value = '';
-        document.getElementById('location').value = '';
+        document.getElementById('pasture').value = '';
         document.getElementById('notes').value = '';
         showStatus("Ready to add new horse.", "#333");
     }
@@ -259,7 +259,7 @@
         const filtered = allHorses.filter(h => {
             const searchable = [
                 h.Name, h.name, h.Breed, h.breed, h.Gender, h.gender,
-                h['Field Home'], h.location, h.Notes, h.general_notes,
+                h['Field Home'], h.pasture, h.Notes, h.general_notes,
                 h['Medical Conditions'], h['Farrier notes'], h['Treatment Description']
             ].filter(Boolean).join(' ').toLowerCase();
             return searchable.includes(q);
