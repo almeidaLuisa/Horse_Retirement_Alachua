@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Horse — Horse Retirement Alachua</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
+    <style>
+      :root {
+        --green-light: #e8f5e9;
+        --green-mid:   #81c784;
+        --green-dark:  #388e3c;
+        --blue-light:  #e0f7fa;
+        --blue-dark:   #00796b;
+        --text-dark:   #263238;
+        --text-muted:  #546e7a;
+        --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Nunito', sans-serif;
+        color: var(--text-dark);
+        background: linear-gradient(170deg, var(--green-light) 0%, #f5faf6 40%, var(--blue-light) 100%);
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .top-bar {
+        background: linear-gradient(90deg, var(--green-dark), var(--blue-dark));
+        padding: 0.65rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+      }
+      .top-bar .brand {
+        color: #fff; font-weight: 800; font-size: 1.15rem; text-decoration: none;
+      }
+      .top-bar .brand:hover { opacity: 0.9; }
+      .btn-back {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 0.5rem 1.2rem; background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.5); border-radius: 8px;
+        color: #fff; font-weight: 700; font-size: 0.88rem;
+        text-decoration: none; transition: background 0.2s;
+      }
+      .btn-back:hover { background: rgba(255,255,255,0.35); color: #fff; }
+
+      .card {
+        background: white;
+        padding: 2rem;
+        border: 2px solid var(--green-mid);
+        border-radius: 14px;
+        box-shadow: var(--card-shadow);
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .card h1 {
+        color: var(--green-dark);
+        font-weight: 800;
+        font-size: 1.6rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 3px solid var(--green-mid);
+        padding-bottom: 0.5rem;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+      }
+
+      .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+      .form-group.full-width { grid-column: span 2; }
+
+      label {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: var(--green-dark);
+      }
+
+      input, select, textarea {
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.95rem;
+        padding: 10px 14px;
+        border: 2px solid var(--blue-light);
+        border-radius: 8px;
+        background: var(--blue-light);
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+      input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--blue-dark);
+        background: #d4f1f4;
+      }
+      input:hover, select:hover, textarea:hover {
+        background: #d4f1f4;
+        border-color: var(--blue-dark);
+      }
+
+      textarea { resize: vertical; min-height: 80px; }
+
+      /* Image upload area */
+      .upload-area {
+        border: 2px dashed var(--green-mid);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        background: var(--green-light);
+        transition: all 0.3s ease;
+        position: relative;
+      }
+      .upload-area:hover { background: #c8e6c9; border-color: var(--green-dark); }
+      .upload-area i { font-size: 2rem; color: var(--green-dark); display: block; margin-bottom: 0.3rem; }
+      .upload-area span { font-size: 0.88rem; color: var(--text-muted); }
+      .upload-area input[type="file"] {
+        position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        width: 100%; height: 100%;
+      }
+      .upload-area img {
+        max-width: 200px; max-height: 200px;
+        border-radius: 8px; margin-top: 0.5rem;
+        display: none;
+      }
+
+      /* Buttons */
+      .btn-row { display: flex; gap: 12px; margin-top: 1.5rem; }
+      .btn-save {
+        padding: 12px 28px;
+        background: linear-gradient(90deg, var(--green-dark), var(--blue-dark));
+        color: #fff; font-weight: 700; font-size: 1rem;
+        border: none; border-radius: 8px; cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .btn-save:hover { opacity: 0.9; }
+      .btn-cancel {
+        padding: 12px 28px;
+        background: #95a5a6; color: #fff;
+        font-weight: 700; font-size: 1rem;
+        border: none; border-radius: 8px; cursor: pointer;
+        text-decoration: none; display: inline-flex; align-items: center;
+        transition: opacity 0.2s;
+      }
+      .btn-cancel:hover { opacity: 0.85; color: #fff; }
+
+      .status-msg {
+        margin-top: 1rem; padding: 12px; border-radius: 8px;
+        color: #fff; font-weight: 700; text-align: center; display: none;
+      }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <a href="dashboard_page.html" class="brand">
+            <i class="bi bi-house-door-fill"></i> The Retirement Home for Horses, Inc.
+        </a>
+        <a href="dashboard_page.html" class="btn-back"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+    </div>
+
+    <div class="card">
+        <h1><i class="bi bi-plus-circle"></i> Add a New Horse</h1>
+
+        <div id="statusMsg" class="status-msg"></div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" placeholder="e.g. Patrick" required>
+            </div>
+            <div class="form-group">
+                <label for="breed">Breed</label>
+                <input type="text" id="breed" placeholder="e.g. Quarter Horse">
+            </div>
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <select id="gender">
+                    <option value="">— Select —</option>
+                    <option value="Gelding">Gelding</option>
+                    <option value="Mare">Mare</option>
+                    <option value="Stallion">Stallion</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pasture">Pasture / Field Home</label>
+                <input type="text" id="pasture" placeholder="e.g. Buttercup's Meadow">
+            </div>
+            <div class="form-group">
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob">
+            </div>
+            <div class="form-group">
+                <!-- spacer for grid alignment -->
+            </div>
+
+            <div class="form-group full-width">
+                <label>Horse Photo</label>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="photoInput" accept="image/*">
+                    <i class="bi bi-cloud-arrow-up"></i>
+                    <span>Click or drag an image here</span>
+                    <img id="photoPreview" alt="Preview">
+                </div>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="notes">Notes <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+                <textarea id="notes" rows="3" placeholder="Any medical conditions, history, or general notes..."></textarea>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-save" onclick="saveHorse()">💾 Save to Database</button>
+            <a href="horses_database_page.html" class="btn-cancel">Cancel</a>
+        </div>
+    </div>
+
+    <script>
+      const API_URL = "http://127.0.0.1:5000/horses";
+
+      // Image preview
+      document.getElementById('photoInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            const img = document.getElementById('photoPreview');
+            img.src = ev.target.result;
+            img.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Save horse to MongoDB via Flask
+      async function saveHorse() {
+        const name = document.getElementById('name').value.trim();
+        if (!name) {
+          alert('Please enter a horse name!');
+          return;
+        }
+
+        const horseData = {
+          Name: name,
+          Breed: document.getElementById('breed').value.trim(),
+          Gender: document.getElementById('gender').value,
+          'Field Home': document.getElementById('pasture').value.trim(),
+          'Date of Birth': document.getElementById('dob').value,
+          Notes: document.getElementById('notes').value.trim()
+        };
+
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(horseData)
+          });
+
+          if (response.ok) {
+            showStatus('Horse added successfully!', 'green');
+            setTimeout(() => {
+              window.location.href = 'horses_database_page.html';
+            }, 1200);
+          } else {
+            const err = await response.json();
+            showStatus('Error: ' + (err.error || 'Could not save.'), 'red');
+          }
+        } catch (error) {
+          console.error(error);
+          showStatus('Server error. Is the Flask server running?', 'red');
+        }
+      }
+
+      function showStatus(msg, color) {
+        const el = document.getElementById('statusMsg');
+        el.innerText = msg;
+        el.style.backgroundColor = color;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 4000);
+      }
+    </script>
+</body>
+</html>

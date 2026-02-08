@@ -37,6 +37,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
         box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         position: sticky;
         top: 0;
@@ -147,6 +149,8 @@
         font-size: 0.88rem;
         text-decoration: none;
         transition: background 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
       .btn-back:hover { background: rgba(255,255,255,0.35); color: #fff; }
 
@@ -249,7 +253,10 @@
         <a href="dashboard_page.html" class="brand">
           <i class="bi bi-house-door-fill"></i> The Retirement Home for Horses, Inc.
         </a>
-        <a href="dashboard_page.html" class="btn-back"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+        <div style="display:flex;gap:8px;">
+            <a href="horses_database_page.html" class="btn-back"><i class="bi bi-arrow-left"></i> Back to Database</a>
+            <a href="dashboard_page.html" class="btn-back"><i class="bi bi-house-door-fill"></i> Back to Dashboard</a>
+        </div>
     </div>
 
     <!-- Horse photo + observations side by side -->
