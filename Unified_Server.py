@@ -40,6 +40,7 @@ try:
     # RESTORED: Daily Obs Collection
     daily_obs_collection = db['DailyObs_Tables']
     docs_collection = db['Docs_Tables']
+    treatment_collection = db['Horse_Treatment_Tables']
     
     print(f"✅ UNIFIED SERVER CONNECTED to {DB_NAME}")
 except Exception as e:
@@ -900,6 +901,80 @@ def delete_horse_doc(horse_name, doc_id):
         })
 
         return jsonify({'message': 'Document deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==========================================
+#      SECTION 2.7: HORSE TREATMENTS
+# ==========================================
+
+@app.route('/api/treatments/<horse_name>', methods=['GET'])
+def get_horse_treatments(horse_name):
+    """Get all treatments for a specific horse."""
+    try:
+        treatments = list(treatment_collection.find({'horse_name': horse_name}).sort('datetime_last_updated', -1))
+        for t in treatments:
+            t['_id'] = str(t['_id'])
+        return jsonify(treatments), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/treatments/<horse_name>', methods=['POST'])
+def add_horse_treatment(horse_name):
+    """Add a treatment record for a horse."""
+    try:
+        data = request.json
+        treatment_type = data.get('treatment_type', '').strip()
+        frequency = data.get('frequency', '').strip()
+        user_email = data.get('user_email', 'Unknown')
+
+        if not treatment_type:
+            return jsonify({'error': 'Treatment type is required.'}), 400
+
+        doc = {
+            'horse_name': horse_name,
+            'treatment_type': treatment_type,
+            'frequency': frequency,
+            'datetime_last_updated': datetime.utcnow(),
+            'user_that_made_change': user_email
+        }
+
+        result = treatment_collection.insert_one(doc)
+
+        audit_collection.insert_one({
+            'action': 'ADD_TREATMENT',
+            'table': 'Horse_Treatment_Tables',
+            'user_id': user_email,
+            'details': f"Added treatment '{treatment_type}' for {horse_name}",
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Treatment added', '_id': str(result.inserted_id)}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/treatments/<horse_name>/<treatment_id>', methods=['DELETE'])
+def delete_horse_treatment(horse_name, treatment_id):
+    """Delete a treatment record."""
+    try:
+        user_email = request.args.get('user_email', 'Unknown')
+        rec = treatment_collection.find_one({'_id': ObjectId(treatment_id), 'horse_name': horse_name})
+        if not rec:
+            return jsonify({'error': 'Treatment not found.'}), 404
+
+        treatment_collection.delete_one({'_id': ObjectId(treatment_id)})
+
+        audit_collection.insert_one({
+            'action': 'DELETE_TREATMENT',
+            'table': 'Horse_Treatment_Tables',
+            'user_id': user_email,
+            'details': f"Deleted treatment '{rec.get('treatment_type', '')}' for {horse_name}",
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Treatment deleted'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

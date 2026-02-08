@@ -383,17 +383,61 @@
 
     <div class="section">
         <h2>Treatments Table</h2>
-        <table>
-            <tr>
-                <th>Treatment</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            <tr>
-                <td contenteditable="true">Treatment Name</td>
-                <td contenteditable="true">Status</td>
-                <td><span class="icon" title="Edit"><i class="bi bi-pencil"></i></span> <span class="icon" title="Delete"><i class="bi bi-trash"></i></span></td>
-            </tr>
+
+        <!-- Add treatment form (editors/admins only) -->
+        <div id="treatmentAddForm" style="display:none; margin-bottom:1rem; padding:1rem; background:#f9f9f9; border-radius:10px;">
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:end;">
+                <div style="flex:1; min-width:180px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Type of Treatment</label>
+                    <select id="treatmentType" class="form-control" style="font-size:0.9rem;">
+                        <option value="">— Select —</option>
+                        <option>Antibiotics</option>
+                        <option>Banamine</option>
+                        <option>Bandaging</option>
+                        <option>Bute</option>
+                        <option>Cushings exam</option>
+                        <option>Dental</option>
+                        <option>Dex</option>
+                        <option>Drainage</option>
+                        <option>Equi-spot</option>
+                        <option>Eye exam</option>
+                        <option>Farrier</option>
+                        <option>Gel DeWormer</option>
+                        <option>Medicated bath</option>
+                        <option>Paste DeWormer</option>
+                        <option>Pellets DeWormer</option>
+                        <option>Prascend</option>
+                        <option>Previcox</option>
+                        <option>Tubed for choke</option>
+                        <option>Tubed for colic</option>
+                        <option>Vet exam</option>
+                        <option value="__other__">Other…</option>
+                    </select>
+                    <input type="text" id="treatmentOther" class="form-control mt-1" placeholder="Describe treatment" style="display:none; font-size:0.9rem;">
+                </div>
+                <div style="flex:1; min-width:140px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Frequency <span style='color:#999;font-weight:400;'>(optional)</span></label>
+                    <input type="text" id="treatmentFreq" class="form-control" placeholder="e.g. Daily, Weekly" style="font-size:0.9rem;">
+                </div>
+                <button onclick="addTreatment()" style="height:38px; padding:0 1.25rem; background:linear-gradient(135deg,#9CD479,#79AED4); color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer;">
+                    <i class="bi bi-plus-circle"></i> Add
+                </button>
+            </div>
+        </div>
+
+        <table id="treatmentsTable">
+            <thead>
+                <tr>
+                    <th>Treatment</th>
+                    <th>Frequency</th>
+                    <th>Last Updated</th>
+                    <th>Updated By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="treatmentsTableBody">
+                <tr><td colspan="5" style="text-align:center; color:#999;">Loading treatments…</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -713,6 +757,7 @@
         // Show doc upload form for editors/admins
         if (role === 'admin' || role === 'editor') {
           document.getElementById('docUploadForm').style.display = 'block';
+          document.getElementById('treatmentAddForm').style.display = 'block';
         }
       })();
 
@@ -725,6 +770,116 @@
         }
         return true;
       }
+
+      // ═══════════════════════════════════════
+      //        TREATMENTS TABLE
+      // ═══════════════════════════════════════
+
+      // Toggle "Other" text input when selected
+      document.getElementById('treatmentType').addEventListener('change', function() {
+        document.getElementById('treatmentOther').style.display = this.value === '__other__' ? 'block' : 'none';
+      });
+
+      async function loadTreatments() {
+        if (!horseName) return;
+        const tbody = document.getElementById('treatmentsTableBody');
+        try {
+          const res = await fetch(`/api/treatments/${encodeURIComponent(horseName)}`);
+          const treatments = await res.json();
+          if (!treatments.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">No treatments recorded yet.</td></tr>';
+            return;
+          }
+          const role = (localStorage.getItem('user_role') || '').toLowerCase();
+          const canDelete = role === 'admin' || role === 'editor';
+          tbody.innerHTML = treatments.map(t => {
+            const dt = t.datetime_last_updated ? new Date(t.datetime_last_updated).toLocaleString() : '—';
+            const user = t.user_that_made_change || '—';
+            return `<tr>
+              <td>${t.treatment_type || '—'}</td>
+              <td>${t.frequency || '—'}</td>
+              <td>${dt}</td>
+              <td>${user}</td>
+              <td>
+                ${canDelete ? `<span class="icon" title="Delete" style="cursor:pointer;color:#c62828;" onclick="deleteTreatment('${t._id}','${(t.treatment_type || '').replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></span>` : ''}
+              </td>
+            </tr>`;
+          }).join('');
+        } catch (e) {
+          console.error('Error loading treatments:', e);
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c62828;">Failed to load treatments.</td></tr>';
+        }
+      }
+
+      async function addTreatment() {
+        if (!isAdmin()) return;
+        const select = document.getElementById('treatmentType');
+        const otherInput = document.getElementById('treatmentOther');
+        const freqInput = document.getElementById('treatmentFreq');
+
+        let treatmentType = select.value;
+        if (treatmentType === '__other__') {
+          treatmentType = otherInput.value.trim();
+          if (!treatmentType) {
+            showToast('Please describe the treatment.', '#c62828');
+            return;
+          }
+        }
+        if (!treatmentType) {
+          showToast('Please select a treatment type.', '#c62828');
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/treatments/${encodeURIComponent(horseName)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              treatment_type: treatmentType,
+              frequency: freqInput.value.trim(),
+              user_email: localStorage.getItem('user_email') || 'Unknown'
+            })
+          });
+          if (res.ok) {
+            showToast('Treatment added!', '#388e3c');
+            select.value = '';
+            otherInput.value = '';
+            otherInput.style.display = 'none';
+            freqInput.value = '';
+            loadTreatments();
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not add treatment.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Add treatment error:', e);
+          showToast('Server error.', '#c62828');
+        }
+      }
+
+      async function deleteTreatment(treatmentId, treatmentName) {
+        if (!isAdmin()) return;
+        if (!confirm(`Delete treatment "${treatmentName}"? This cannot be undone.`)) return;
+        try {
+          const userEmail = localStorage.getItem('user_email') || 'Unknown';
+          const res = await fetch(`/api/treatments/${encodeURIComponent(horseName)}/${treatmentId}?user_email=${encodeURIComponent(userEmail)}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            showToast('Treatment deleted.', '#388e3c');
+            loadTreatments();
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not delete.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Delete treatment error:', e);
+          showToast('Server error.', '#c62828');
+        }
+      }
+
+      // Load treatments on page load
+      loadTreatments();
 
       // ═══════════════════════════════════════
       //        DOCUMENTS TABLE
