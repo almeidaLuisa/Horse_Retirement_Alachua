@@ -569,6 +569,7 @@
       }
 
       function enableEditing() {
+        if (!isAdmin()) return;
         snapshotValues();
         setFieldsReadonly(false);
         document.getElementById('btnEdit').style.display = 'none';
@@ -585,6 +586,7 @@
       }
 
       async function saveChanges() {
+        if (!isAdmin()) return;
         if (!currentHorseId) {
           showToast('Cannot save — horse ID not found.', '#c62828');
           return;
@@ -635,6 +637,16 @@
         toast.style.background = bgColor;
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3000);
+      }
+
+      // Permission check
+      function isAdmin() {
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (role !== 'admin') {
+          showToast("🔒 You don't have permission to do this.", '#c62828');
+          return false;
+        }
+        return true;
       }
     </script>
 </body>

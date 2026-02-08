@@ -54,7 +54,7 @@
     <div id="statusMsg" class="status-msg"></div>
 
     <div style="display:flex; gap:10px; margin-bottom:15px;">
-        <a href="add_horse_page.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 22px;text-decoration:none;font-size:1rem;">➕ Add Horse</a>
+        <a href="#" onclick="if(!checkAdmin())return false;window.location.href='add_horse_page.html';" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 22px;text-decoration:none;font-size:1rem;">➕ Add Horse</a>
         <button class="btn-success" onclick="fetchHorses()">🔄 Refresh List</button>
     </div>
 
@@ -127,6 +127,7 @@
 
     // 3. DELETE HORSE
     async function deleteHorse(id) {
+        if (!checkAdmin()) return;
         if (!confirm("Are you sure you want to delete this horse?")) return;
 
         try {
@@ -170,7 +171,17 @@
 
     // Load data on start
     fetchHorses();
-</script>
+
+    // Permission check
+    function checkAdmin() {
+      const role = (localStorage.getItem('user_role') || '').toLowerCase();
+      if (role !== 'admin') {
+        showStatus("🔒 You don't have permission to do this.", "#c62828");
+        return false;
+      }
+      return true;
+    }
+    </script>
 
 </body>
 </html>

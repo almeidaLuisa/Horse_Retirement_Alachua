@@ -578,6 +578,7 @@
       const btnSaveObs = document.getElementById('btnSaveObs');
 
       btnAddObs.addEventListener('click', () => {
+        if (!checkAdmin()) return;
         document.getElementById('obsNote').value = '';
         document.getElementById('obsSuccess').classList.add('d-none');
         addObsModal.show();
@@ -613,11 +614,22 @@
 
       // DELETE OBS
       async function deleteItem(id) {
+        if (!checkAdmin()) return;
         if(!confirm("Delete this item?")) return;
         try {
           await fetch(`${API_URL}/api/daily-obs/${id}`, {method: 'DELETE'});
           loadDailyObs();
         } catch(e) { console.error(e); }
+      }
+
+      // Permission check
+      function checkAdmin() {
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (role !== 'admin') {
+          alert("🔒 You don't have permission to do this.");
+          return false;
+        }
+        return true;
       }
     </script>
   </body>
