@@ -112,7 +112,10 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Password</label>
-                            <input type="password" id="loginPassword" class="form-control" required>
+                            <div class="input-group">
+                                <input type="password" id="loginPassword" class="form-control" required>
+                                <button class="btn btn-outline-secondary" type="button" tabindex="-1" onclick="toggleLoginPw(this)"><i class="fa fa-eye"></i></button>
+                            </div>
                         </div>
                         
                         <div id="loginError" class="text-danger small mb-3 text-center"></div>
@@ -178,6 +181,32 @@
                         <small>Already have an account?</small><br>
                         <button onclick="showLogin()" class="btn btn-link text-decoration-none" style="color: var(--primary-blue); font-weight: bold;">Back to Login</button>
                     </div>
+                </div>
+
+                <div class="text-end mb-2">
+                    <button type="button" class="btn btn-link p-0 text-decoration-none" style="color:var(--primary-blue);font-size:0.95rem;" onclick="showForgotPwModal()">Forgot Password?</button>
+                </div>
+
+                <!-- Forgot Password Modal -->
+                <div class="modal fade" id="forgotPwModal" tabindex="-1" aria-labelledby="forgotPwModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="forgotPwModalLabel">Reset Password</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <form id="forgotPwForm" onsubmit="sendResetEmail(event)">
+                          <div class="mb-3">
+                            <label for="forgotEmail" class="form-label">Enter your email address</label>
+                            <input type="email" class="form-control" id="forgotEmail" required>
+                          </div>
+                          <div id="forgotPwStatus" class="small mb-2"></div>
+                          <button type="submit" class="btn btn-primary w-100">Send Reset Link</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
             </div>
@@ -318,6 +347,55 @@
                 alert(data.message || 'Verification email resent!');
             } catch (err) {
                 alert('Could not resend. Is the server running?');
+            }
+        }
+
+        function toggleLoginPw(btn) {
+            const input = document.getElementById('loginPassword');
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa fa-eye';
+            }
+        }
+
+        // Forgot Password Modal
+        let forgotPwModal;
+        function showForgotPwModal() {
+            if (!forgotPwModal) {
+                forgotPwModal = new bootstrap.Modal(document.getElementById('forgotPwModal'));
+            }
+            document.getElementById('forgotEmail').value = '';
+            document.getElementById('forgotPwStatus').innerText = '';
+            forgotPwModal.show();
+        }
+
+        async function sendResetEmail(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value.trim();
+            const statusEl = document.getElementById('forgotPwStatus');
+            statusEl.innerText = 'Sending...';
+            statusEl.className = 'small text-muted mb-2';
+            try {
+                const res = await fetch('/api/auth/request-password-reset', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    statusEl.innerText = 'Reset link sent! Check your email.';
+                    statusEl.className = 'small text-success mb-2';
+                } else {
+                    statusEl.innerText = data.error || 'Could not send reset link.';
+                    statusEl.className = 'small text-danger mb-2';
+                }
+            } catch (err) {
+                statusEl.innerText = 'Server error.';
+                statusEl.className = 'small text-danger mb-2';
             }
         }
     </script>

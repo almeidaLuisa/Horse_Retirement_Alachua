@@ -80,8 +80,10 @@ def send_verification_email(to_email, first_name, token):
     msg.attach(MIMEText(html, 'html'))
     
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+            server.ehlo()
             server.starttls()
+            server.ehlo()
             server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
             server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
         print(f"✅ Verification email sent to {to_email}")
@@ -142,7 +144,11 @@ def register():
         user_logins.insert_one(new_user)
 
         # Send verification email
-        send_verification_email(email, first_name, new_user['verification_token'])
+        try:
+            send_verification_email(email, first_name, new_user['verification_token'])
+        except Exception as e:
+            print("❌ Email send failed:", e)
+
 
         # Log to audit trail
         audit_collection.insert_one({
