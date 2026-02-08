@@ -26,11 +26,29 @@
         
         .action-buttons { display: flex; gap: 5px; }
         .status-msg { margin-top: 10px; padding: 10px; border-radius: 4px; display: none; }
+
+        /* Search bar */
+        .search-wrap { margin: 15px 0; position: relative; }
+        .search-wrap input {
+            width: 100%; padding: 12px 12px 12px 40px;
+            border: 2px solid #ddd; border-radius: 8px;
+            font-size: 1rem; box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .search-wrap input:focus { outline: none; border-color: #3498db; }
+        .search-wrap .search-icon {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            font-size: 1.1rem; color: #95a5a6;
+        }
+        .search-count { font-size: 0.85rem; color: #7f8c8d; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div style="margin-bottom: 15px;">
+        <a href="dashboard_page.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#2c3e50;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;font-size:0.9rem;">&#8592; Back to Dashboard</a>
+    </div>
     <h1>🐴 Retirement Home Horse Database</h1>
     
     <div id="statusMsg" class="status-msg"></div>
@@ -68,6 +86,11 @@
     </div>
 
     <h2>Current Herd</h2>
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search by name, breed, location, notes..." autocomplete="off" />
+        <div class="search-count" id="searchCount"></div>
+    </div>
     <button class="btn-success" onclick="fetchHorses()">🔄 Refresh List</button>
     <table>
         <thead>
@@ -87,15 +110,33 @@
 
 <script>
     const API_URL = "http://127.0.0.1:5000/horses";
+    let allHorses = [];  // cached for search filtering
 
     // 1. FETCH AND DISPLAY HORSES
     async function fetchHorses() {
         try {
             const response = await fetch(API_URL);
-            const horses = await response.json();
+            allHorses = await response.json();
             
+            document.getElementById('searchInput').value = '';
+            renderHorses(allHorses);
+            showStatus("List updated!", "green");
+        } catch (error) {
+            console.error(error);
+            showStatus("Error fetching data. Is server.py running?", "red");
+        }
+    }
+
+    // RENDER HORSES INTO TABLE
+    function renderHorses(horses) {
             const tableBody = document.getElementById('horseTableBody');
-            tableBody.innerHTML = ''; // Clear current list
+            tableBody.innerHTML = '';
+            document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
+
+            if (horses.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
+                return;
+            }
 
             horses.forEach(horse => {
                 const row = `
@@ -113,11 +154,6 @@
                 `;
                 tableBody.innerHTML += row;
             });
-            showStatus("List updated!", "green");
-        } catch (error) {
-            console.error(error);
-            showStatus("Error fetching data. Is server.py running?", "red");
-        }
     }
 
     // 2. SAVE (CREATE OR UPDATE)
@@ -213,6 +249,23 @@
         el.style.display = "block";
         setTimeout(() => el.style.display = 'none', 3000);
     }
+
+    // SEARCH: filter horses as user types
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        if (!q) { renderHorses(allHorses); return; }
+
+        const filtered = allHorses.filter(h => {
+            const searchable = [
+                h.Name, h.name, h.Breed, h.breed, h.Gender, h.gender,
+                h['Field Home'], h.location, h.Notes, h.general_notes,
+                h['Medical Conditions'], h['Farrier notes'], h['Treatment Description']
+            ].filter(Boolean).join(' ').toLowerCase();
+            return searchable.includes(q);
+        });
+
+        renderHorses(filtered);
+    });
 
     // Load data on start
     fetchHorses();
