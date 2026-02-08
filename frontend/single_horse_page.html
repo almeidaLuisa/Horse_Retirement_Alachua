@@ -216,12 +216,7 @@
         <h1 class="horse-name-field" id="horseName">Horse Name</h1>
         <div class="horse-header">
             <div class="horse-photo">
-                <!-- Replace the placeholder below with an <img> tag, e.g.:
-                     <img src="images/Abby.jpg" alt="Abby"> -->
-                <div class="placeholder">
-                    <i class="bi bi-camera-fill"></i>
-                    Horse photo goes here
-                </div>
+                <img id="horseImage" src="" alt="Horse photo">
             </div>
             <div class="horse-info">
                 <h2>Daily Observations / TODO</h2>
@@ -283,12 +278,17 @@
     </div>
 
     <script>
-      // Read horse name from URL and set the title
+      // Read horse name from URL and set the title + image
       const params = new URLSearchParams(window.location.search);
       const horseName = params.get('name');
       if (horseName) {
         document.getElementById('horseName').textContent = horseName;
         document.title = horseName + ' — Horse Retirement Alachua';
+
+        // Map the horse image from the images folder (name.jpg)
+        const img = document.getElementById('horseImage');
+        img.src = 'images/' + horseName + '.jpg';
+        img.alt = horseName;
       }
     </script>
 </body>
