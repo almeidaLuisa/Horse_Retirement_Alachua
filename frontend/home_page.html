@@ -136,6 +136,38 @@
         background: var(--green-dark);
       }
 
+      /* ── Contact & Info ── */
+      .contact-section {
+        background: var(--blue-light);
+        border-radius: 12px;
+        padding: 3rem 2rem;
+        margin-top: 3rem;
+      }
+      .contact-section h2 { margin-bottom: 1.2rem; }
+      .contact-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        height: 100%;
+      }
+      .contact-card h5 {
+        color: var(--green-dark);
+        font-weight: 700;
+        margin-bottom: 0.8rem;
+      }
+      .contact-card p, .contact-card li {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+      }
+      .contact-card ul { padding-left: 1.1rem; }
+      .contact-card a {
+        color: var(--blue-dark);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .contact-card a:hover { text-decoration: underline; }
+
       /* ── Footer filler ── */
       .filler {
         height: 400px;
@@ -143,6 +175,9 @@
         border-radius: 10px;
         margin-top: 2rem;
       }
+
+      /* smooth scroll for anchor links */
+      html { scroll-behavior: smooth; }
     </style>
   </head>
 
@@ -159,13 +194,7 @@
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
             <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="horsesDropdown" role="button" data-bs-toggle="dropdown">Horses</a>
-              <ul class="dropdown-menu" aria-labelledby="horsesDropdown">
-                <li><a class="dropdown-item" href="#list">All horses</a></li>
-                <li><a class="dropdown-item" href="#care">Care</a></li>
-              </ul>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="horses_page.html">Horses</a></li>
             <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
           </ul>
 
@@ -197,9 +226,53 @@
         <div class="gallery-container">
           <button class="btn btn-primary" id="seeMoreBtn" style="display:none;">See More</button>
         </div>
-
-        <div class="filler"></div>
       </section>
+
+      <!-- ── Contact & Information ── -->
+      <section class="container contact-section" id="contact">
+        <h2>Contact &amp; Information</h2>
+        <div class="row g-4">
+
+          <!-- Get in Touch -->
+          <div class="col-md-4">
+            <div class="contact-card">
+              <h5>Get in Touch</h5>
+              <p><strong>Email:</strong> <a href="mailto:info@horseretirementalachua.org">info@horseretirementalachua.org</a></p>
+              <p><strong>Phone:</strong> <a href="tel:+13525551234">(352) 555-1234</a></p>
+              <p><strong>Address:</strong><br>1234 Pasture Lane<br>Alachua, FL 32615</p>
+            </div>
+          </div>
+
+          <!-- Hours & Visits -->
+          <div class="col-md-4">
+            <div class="contact-card">
+              <h5>Hours &amp; Visits</h5>
+              <ul class="list-unstyled">
+                <li><strong>Mon – Fri:</strong> 9 AM – 5 PM</li>
+                <li><strong>Saturday:</strong> 10 AM – 3 PM</li>
+                <li><strong>Sunday:</strong> Closed</li>
+              </ul>
+              <p>Walk-ins welcome during open hours. Group tours available by appointment.</p>
+            </div>
+          </div>
+
+          <!-- How to Help -->
+          <div class="col-md-4">
+            <div class="contact-card">
+              <h5>How to Help</h5>
+              <ul>
+                <li>Sponsor a horse's monthly care</li>
+                <li>Volunteer at the ranch</li>
+                <li>Donate supplies (hay, blankets, tack)</li>
+                <li>Share our mission on social media</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <div class="container"><div class="filler"></div></div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
