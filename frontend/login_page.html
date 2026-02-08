@@ -71,7 +71,7 @@
     <div class="login-container">
         <div class="card">
             <div class="card-header">
-                <h1><i class="horse logo"></i><img src="images/Horse_logo.jpg"  width="100" height="100"></h1>
+                <h1><i class="horse logo"></i><img src="images/Horse_logo.jpg" alt="Logo" width="100" height="100"></h1>
                 <p class="text-muted">Retirement Home For Horses, Inc.</p>
             </div>
             
@@ -147,10 +147,8 @@
     </div>
 
     <script>
-        // FIXED URL: Pointing directly to your local Python server
         const API_URL = "http://127.0.0.1:5000/api/auth";
 
-        // --- UI SWITCHING FUNCTIONS ---
         function showRegister() {
             document.getElementById('loginSection').classList.add('d-none');
             document.getElementById('registerSection').classList.remove('d-none');
@@ -168,7 +166,6 @@
             document.getElementById('regError').innerText = "";
         }
 
-        // --- 1. HANDLE LOGIN ---
         async function handleLogin(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -187,9 +184,12 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // SUCCESS: Redirect to Dashboard
+                    // --- KEY UPDATE: Saving Email and Role ---
                     console.log("Login Success:", data);
                     localStorage.setItem('user_name', data.user.first_name);
+                    localStorage.setItem('user_email', data.user.email); // Vital for Profile Page
+                    localStorage.setItem('user_role', data.user.role);   // Vital for Permissions
+                    
                     window.location.href = "dashboard_page.html";
                 } else {
                     errorDiv.innerText = data.error || "Login failed.";
@@ -200,11 +200,9 @@
             }
         }
 
-        // --- 2. HANDLE REGISTER ---
         async function handleRegister(e) {
             e.preventDefault();
             
-            // Gather all 5 fields
             const userData = {
                 first_name: document.getElementById('regFirstName').value,
                 last_name: document.getElementById('regLastName').value,
@@ -227,7 +225,7 @@
 
                 if (response.ok) {
                     alert("Account Created Successfully! Click OK to return to Login.");
-                    showLogin(); // Automatically go back to login screen
+                    showLogin(); 
                 } else {
                     errorDiv.innerText = data.error || "Registration failed.";
                 }
