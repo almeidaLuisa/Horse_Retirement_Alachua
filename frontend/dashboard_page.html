@@ -335,56 +335,8 @@
           <h2><i class="bi bi-journal-text"></i> Audit Trail</h2>
           <span class="badge-count">Recent</span>
         </div>
-        <div class="dash-card-body scroll-body">
-
-          <div class="item-row">
-            <div class="item-icon icon-audit"><i class="bi bi-pencil-square"></i></div>
-            <div class="item-text">
-              <div class="title">Farrier visit logged — Acero</div>
-              <div class="meta">1/28/2026 · Shoe on right hind, sedated for trim</div>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-audit"><i class="bi bi-pencil-square"></i></div>
-            <div class="item-text">
-              <div class="title">Bandit — dental sedation</div>
-              <div class="meta">01/2026 · IM sedative first then IV after relaxed</div>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-audit"><i class="bi bi-person-plus-fill"></i></div>
-            <div class="item-text">
-              <div class="title">New intake — Alf</div>
-              <div class="meta">11/2025 · Thoroughbred seized by Citrus Co Animal Services</div>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-audit"><i class="bi bi-person-plus-fill"></i></div>
-            <div class="item-text">
-              <div class="title">New intake — Annie</div>
-              <div class="meta">05/2025 · Oldenburg donated by Orange County Sheriff</div>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-audit"><i class="bi bi-heart-pulse-fill"></i></div>
-            <div class="item-text">
-              <div class="title">Field of Dreams — Breaker</div>
-              <div class="meta">9/22/2025 · Impacted grass in lower esophagus</div>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-audit"><i class="bi bi-pencil-square"></i></div>
-            <div class="item-text">
-              <div class="title">Farrier visit — Alf</div>
-              <div class="meta">1/7/2026 · Gracie's Paddock</div>
-            </div>
-          </div>
-
+        <div class="dash-card-body scroll-body" id="auditTrailBody">
+          <!-- Audit entries loaded from API -->
         </div>
       </div>
 
@@ -492,12 +444,64 @@
     </div>
 
     <script>
-      // Load and display the current user's name from localStorage
+      const API_URL = "http://127.0.0.1:5000";
+
+      // Load username and audits on page load
       window.addEventListener('DOMContentLoaded', function() {
         const userFullName = document.getElementById('userFullName');
         const storedUsername = localStorage.getItem('currentUsername') || 'user123';
         userFullName.textContent = storedUsername;
+        
+        // Load audit trail from API
+        loadAuditTrail();
       });
+
+      // Fetch and display audit trail from MongoDB
+      async function loadAuditTrail() {
+        try {
+          const response = await fetch(`${API_URL}/audits?limit=20`);
+          const audits = await response.json();
+          
+          const auditBody = document.getElementById('auditTrailBody');
+          auditBody.innerHTML = '';
+          
+          if (!audits || audits.length === 0) {
+            auditBody.innerHTML = '<div style="text-align:center;color:#999;padding:2rem;">No audit entries found</div>';
+            return;
+          }
+          
+          audits.forEach(audit => {
+            const timestamp = new Date(audit.timestamp).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            });
+            
+            // Determine icon based on action type
+            let iconClass = 'bi bi-pencil-square';
+            if (audit.action.includes('intake') || audit.action.includes('new')) {
+              iconClass = 'bi bi-person-plus-fill';
+            } else if (audit.action.includes('medical') || audit.action.includes('health')) {
+              iconClass = 'bi bi-heart-pulse-fill';
+            }
+            
+            const auditHtml = `
+              <div class="item-row">
+                <div class="item-icon icon-audit"><i class="${iconClass}"></i></div>
+                <div class="item-text">
+                  <div class="title">${audit.horse_name ? audit.horse_name + ' — ' + audit.action : audit.action}</div>
+                  <div class="meta">${timestamp} · ${audit.description}</div>
+                </div>
+              </div>
+            `;
+            auditBody.innerHTML += auditHtml;
+          });
+        } catch (error) {
+          console.error('Error loading audit trail:', error);
+          const auditBody = document.getElementById('auditTrailBody');
+          auditBody.innerHTML = '<div style="color:#999;padding:1rem;">Unable to load audit trail. Is the server running?</div>';
+        }
+      }
     </script>
 
     <!-- ✅ Dashboard + Modal JS (loads from MongoDB + saves to MongoDB) -->

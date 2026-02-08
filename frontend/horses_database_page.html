@@ -53,36 +53,9 @@
     
     <div id="statusMsg" class="status-msg"></div>
 
-    <div class="form-group">
-        <input type="hidden" id="horseId"> <div>
-            <label>Name:</label>
-            <input type="text" id="name" placeholder="Horse Name">
-        </div>
-        <div>
-            <label>Breed:</label>
-            <input type="text" id="breed" placeholder="Breed">
-        </div>
-        <div>
-            <label>Gender:</label>
-            <select id="gender">
-                <option value="Gelding">Gelding</option>
-                <option value="Mare">Mare</option>
-                <option value="Stallion">Stallion</option>
-            </select>
-        </div>
-        <div>
-            <label>Pasture / Field Home:</label>
-            <input type="text" id="pasture" placeholder="e.g. Buttercup's Meadow">
-        </div>
-        <div style="grid-column: span 2;">
-            <label>Medical / General Notes:</label>
-            <textarea id="notes" rows="2" placeholder="Any medical conditions or notes..."></textarea>
-        </div>
-        
-        <div style="grid-column: span 2; display: flex; gap: 10px;">
-            <button class="btn-primary" onclick="saveHorse()">💾 Save to Database</button>
-            <button class="btn-secondary" onclick="clearForm()">Cancel</button>
-        </div>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <a href="add_horse_page.html" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 22px;text-decoration:none;font-size:1rem;">➕ Add Horse</a>
+        <button class="btn-success" onclick="fetchHorses()">🔄 Refresh List</button>
     </div>
 
     <h2>Current Herd</h2>
@@ -91,7 +64,6 @@
         <input type="text" id="searchInput" placeholder="Search by name, breed, pasture, notes..." autocomplete="off" />
         <div class="search-count" id="searchCount"></div>
     </div>
-    <button class="btn-success" onclick="fetchHorses()">🔄 Refresh List</button>
     <table>
         <thead>
             <tr>
@@ -100,7 +72,6 @@
                 <th>Gender</th>
                 <th>Pasture</th>
                 <th>Notes</th>
-                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="horseTableBody">
@@ -147,61 +118,11 @@
                         <td>${horse.Gender || horse.gender || '-'}</td>
                         <td>${horse['Field Home'] || horse.pasture || '-'}</td>
                         <td>${horse.Notes || horse.general_notes || '-'}</td>
-                        <td class="action-buttons">
-                            <button class="btn-primary" onclick="event.stopPropagation(); editHorse(${JSON.stringify(horse)})">✏️ Edit</button>
-                            <button class="btn-danger" onclick="event.stopPropagation(); deleteHorse('${horse._id}')">🗑️ Delete</button>
-                        </td>
+                        <td class="action-buttons"></td>
                     </tr>
                 `;
                 tableBody.innerHTML += row;
             });
-    }
-
-    // 2. SAVE (CREATE OR UPDATE)
-    async function saveHorse() {
-        const id = document.getElementById('horseId').value;
-        const horseData = {
-            Name: document.getElementById('name').value,
-            Breed: document.getElementById('breed').value,
-            Gender: document.getElementById('gender').value,
-            'Field Home': document.getElementById('pasture').value,
-            Notes: document.getElementById('notes').value
-        };
-
-        if (!horseData.Name) {
-            alert("Please enter a name!");
-            return;
-        }
-
-        try {
-            let response;
-            if (id) {
-                // UPDATE existing
-                response = await fetch(`${API_URL}/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(horseData)
-                });
-            } else {
-                // CREATE new
-                response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(horseData)
-                });
-            }
-
-            if (response.ok) {
-                showStatus("Saved successfully!", "green");
-                clearForm();
-                fetchHorses();
-            } else {
-                showStatus("Error saving.", "red");
-            }
-        } catch (error) {
-            console.error(error);
-            showStatus("Server error.", "red");
-        }
     }
 
     // 3. DELETE HORSE
@@ -220,28 +141,6 @@
     }
 
     // 4. HELPER FUNCTIONS
-    function editHorse(horse) {
-        // Populate form with existing data
-        document.getElementById('horseId').value = horse._id;
-        document.getElementById('name').value = horse.Name || horse.name || '';
-        document.getElementById('breed').value = horse.Breed || horse.breed || '';
-        document.getElementById('gender').value = horse.Gender || horse.gender || 'Gelding';
-        document.getElementById('pasture').value = horse['Field Home'] || horse.pasture || '';
-        document.getElementById('notes').value = horse.Notes || horse.general_notes || '';
-        
-        window.scrollTo(0, 0); // Scroll to top to see form
-        showStatus("Editing " + (horse.Name || horse.name), "blue");
-    }
-
-    function clearForm() {
-        document.getElementById('horseId').value = '';
-        document.getElementById('name').value = '';
-        document.getElementById('breed').value = '';
-        document.getElementById('pasture').value = '';
-        document.getElementById('notes').value = '';
-        showStatus("Ready to add new horse.", "#333");
-    }
-
     function showStatus(msg, color) {
         const el = document.getElementById('statusMsg');
         el.innerText = msg;

@@ -37,6 +37,8 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
         box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         position: sticky;
         top: 0;
@@ -147,6 +149,8 @@
         font-size: 0.88rem;
         text-decoration: none;
         transition: background 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
       }
       .btn-back:hover { background: rgba(255,255,255,0.35); color: #fff; }
 
@@ -189,6 +193,44 @@
         margin-bottom: 0.5rem;
       }
       .horse-info { flex: 1; min-width: 280px; }
+
+      /* Horse details grid */
+      .horse-details {
+        flex: 1;
+        min-width: 260px;
+        max-width: 360px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.5rem 1rem;
+        align-items: center;
+      }
+      .horse-details label {
+        font-weight: 700;
+        color: var(--green-dark);
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+      .horse-details input {
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.88rem;
+        padding: 6px 10px;
+        border: 2px solid var(--blue-light);
+        border-radius: 8px;
+        background: var(--blue-light);
+        color: var(--text-dark);
+        transition: all 0.3s ease;
+        width: 100%;
+      }
+      .horse-details input:hover {
+        background: #d4f1f4;
+        border-color: var(--blue-dark);
+      }
+      .horse-details input:focus {
+        outline: none;
+        border-color: var(--blue-dark);
+        background: #d4f1f4;
+      }
+      .horse-notes-col { flex: 1; min-width: 280px; }
       .horse-name-field {
         font-family: 'Nunito', sans-serif;
         font-size: 1.5rem;
@@ -211,7 +253,10 @@
         <a href="dashboard_page.html" class="brand">
           <i class="bi bi-house-door-fill"></i> The Retirement Home for Horses, Inc.
         </a>
-        <a href="dashboard_page.html" class="btn-back"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+        <div style="display:flex;gap:8px;">
+            <a href="horses_database_page.html" class="btn-back"><i class="bi bi-arrow-left"></i> Back to Database</a>
+            <a href="dashboard_page.html" class="btn-back"><i class="bi bi-house-door-fill"></i> Back to Dashboard</a>
+        </div>
     </div>
 
     <!-- Horse photo + observations side by side -->
@@ -221,7 +266,31 @@
             <div class="horse-photo">
                 <img id="horseImage" src="" alt="Horse photo">
             </div>
-            <div class="horse-info">
+            <div class="horse-details" id="horseDetails">
+                <label>Breed</label>
+                <input id="detailBreed" type="text" value="—" />
+                <label>Gender</label>
+                <input id="detailGender" type="text" value="—" />
+                <label>Age</label>
+                <input id="detailAge" type="text" value="—" />
+                <label>Field Home</label>
+                <input id="detailFieldHome" type="text" value="—" />
+                <label>Medical</label>
+                <input id="detailMedical" type="text" value="—" />
+                <label>RHH Arrival</label>
+                <input id="detailArrival" type="text" value="—" />
+                <label>Field of Dreams</label>
+                <input id="detailFOD" type="text" value="—" />
+                <label>Last Farrier</label>
+                <input id="detailFarrier" type="text" value="—" />
+                <label>Farrier Notes</label>
+                <input id="detailFarrierNotes" type="text" value="—" />
+                <label>Treatment</label>
+                <input id="detailTreatment" type="text" value="—" />
+                <label>Treatment Date</label>
+                <input id="detailTreatmentDate" type="text" value="—" />
+            </div>
+            <div class="horse-notes-col">
                 <h2>Notes</h2>
                 <div class="editable" id="horseNotes" contenteditable="true">Loading notes...</div>
             </div>
@@ -308,9 +377,36 @@
               return dbName === horseName.trim().toLowerCase();
             });
             if (horse) {
-              const notes = horse.Notes || horse.general_notes || '';
-              const notesEl = document.getElementById('horseNotes');
-              notesEl.textContent = notes || 'No notes available.';
+              // Log all available keys so we can see what MongoDB returns
+              console.log('Horse data from MongoDB:', horse);
+              console.log('Available keys:', Object.keys(horse));
+
+              // Helper: try multiple possible field names
+              function getField(...keys) {
+                for (const key of keys) {
+                  if (horse[key] !== undefined && horse[key] !== null && horse[key] !== '') {
+                    return horse[key];
+                  }
+                }
+                return '—';
+              }
+
+              // Populate notes
+              const notes = getField('Notes', 'notes', 'general_notes');
+              document.getElementById('horseNotes').textContent = (notes && notes !== '—') ? notes : 'No notes available.';
+
+              // Populate detail fields from MongoDB (trying multiple possible key names)
+              document.getElementById('detailBreed').value = getField('Breed', 'breed');
+              document.getElementById('detailGender').value = getField('Gender', 'gender', 'Sex', 'sex');
+              document.getElementById('detailAge').value = getField('Age (in 2026)', 'Age', 'age');
+              document.getElementById('detailFieldHome').value = getField('Field Home', 'field_home', 'pasture', 'Pasture', 'location');
+              document.getElementById('detailMedical').value = getField('Medical Conditions', 'medical_conditions', 'Medical', 'medical');
+              document.getElementById('detailArrival').value = getField('RHH Arrival', 'rhh_arrival', 'arrival', 'Arrival');
+              document.getElementById('detailFOD').value = getField('Field of Dreams', 'field_of_dreams');
+              document.getElementById('detailFarrier').value = getField('Last Farrier Date', 'last_farrier_date', 'Farrier Date');
+              document.getElementById('detailFarrierNotes').value = getField('Farrier notes', 'farrier_notes', 'Farrier Notes');
+              document.getElementById('detailTreatment').value = getField('Treatment Description', 'treatment_description', 'Treatment');
+              document.getElementById('detailTreatmentDate').value = getField('Treatment Date', 'treatment_date');
             } else {
               document.getElementById('horseNotes').textContent = 'Horse not found in database.';
             }
