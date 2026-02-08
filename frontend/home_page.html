@@ -1,344 +1,165 @@
-<!-- this is he beggining of our home page for the horse retirement website -->
+<!-- Home / Login landing page for Horse Retirement Alachua -->
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Horse Retirement Alachua — Home</title>
+    <title>Horse Retirement Alachua</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 
     <style>
       :root {
-        /* Light green & blue palette */
-        --green-light: #e8f5e9;
-        --green-mid:   #81c784;
         --green-dark:  #388e3c;
-        --blue-light:  #e0f2f1;
-        --blue-mid:    #4dd0e1;
         --blue-dark:   #00796b;
         --text-dark:   #263238;
-        --text-muted:  #546e7a;
       }
 
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
 
       body {
         font-family: 'Nunito', sans-serif;
         color: var(--text-dark);
-        background: linear-gradient(170deg, var(--green-light) 0%, #fff 40%, var(--blue-light) 100%);
-        padding-top: 76px;
-        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
       }
 
-      /* ── Navbar ── */
-      .navbar-custom {
+      /* ── Top bar ── */
+      .top-bar {
         background: linear-gradient(90deg, var(--green-dark), var(--blue-dark));
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        backdrop-filter: blur(8px);
+        padding: 0.7rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
       }
-
-      .navbar-custom .navbar-brand {
-        font-weight: 800;
-        letter-spacing: 0.5px;
-        font-size: 1.15rem;
-      }
-
-      .nav-link {
-        color: rgba(255,255,255,0.9) !important;
-        font-weight: 600;
-        transition: color 0.2s;
-      }
-      .nav-link:hover { color: #fff !important; text-decoration: underline; }
-
-      .btn-cta {
-        background: var(--green-mid);
+      .top-bar .brand {
         color: #fff;
+        font-weight: 800;
+        font-size: 1.15rem;
+        text-decoration: none;
+      }
+
+      /* ── Hero background ── */
+      .hero-bg {
+        flex: 1;
+        background: url('images/Emmett\ &\ June.jpg') center/cover no-repeat;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .hero-bg::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 50, 40, 0.45);
+      }
+
+      /* ── Login card ── */
+      .login-card {
+        position: relative;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        padding: 2.8rem 2.5rem;
+        max-width: 420px;
+        width: 90%;
+        text-align: center;
+      }
+
+      .login-card h1 {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin-bottom: 0.3rem;
+      }
+      .login-card .subtitle {
+        font-size: 0.95rem;
+        color: #607d8b;
+        margin-bottom: 2rem;
+      }
+
+      .login-card .divider {
+        border: none;
+        border-top: 1px solid #ddd;
+        margin: 1.5rem 0;
+      }
+
+      .login-card .section-label {
+        font-size: 0.9rem;
+        color: #607d8b;
+        font-weight: 600;
+        margin-bottom: 1rem;
+      }
+
+      .btn-login, .btn-register {
+        display: block;
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
         font-weight: 700;
         border: none;
-        border-radius: 20px;
-        padding: 0.35rem 1.1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        text-align: center;
         transition: background 0.2s, transform 0.15s;
       }
-      .btn-cta:hover {
-        background: var(--green-dark);
+
+      .btn-login {
+        background: var(--blue-dark);
+        color: #fff;
+        margin-bottom: 0.8rem;
+      }
+      .btn-login:hover {
+        background: #004d40;
         color: #fff;
         transform: translateY(-1px);
       }
 
-      .navbar-collapse { box-shadow: 0 4px 18px rgba(0,0,0,0.06); }
-
-      /* ── Hero ── */
-      .hero {
-        padding: 5rem 1rem;
-        background: linear-gradient(rgba(0,60,40,0.55), rgba(0,80,80,0.55)), url('images/Abby.jpg') center/cover no-repeat;
-        color: #fff;
-        min-height: 520px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-      }
-      .hero h1 {
-        font-weight: 800;
-        text-shadow: 0 2px 12px rgba(0,0,0,0.35);
-      }
-      .hero .lead {
-        font-size: 1.2rem;
-        opacity: 0.92;
-      }
-
-      /* ── Section headings ── */
-      section h2, section h3 {
-        color: var(--blue-dark);
-        font-weight: 700;
-        position: relative;
-        display: inline-block;
-      }
-      section h2::after {
-        content: '';
-        display: block;
-        width: 50px;
-        height: 3px;
-        background: var(--green-mid);
-        border-radius: 2px;
-        margin-top: 6px;
-      }
-
-      /* ── Gallery ── */
-      .gallery-img {
-        width: 100%;
-        height: 280px;
-        object-fit: cover;
-        border-radius: 10px;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-        cursor: pointer;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
-      }
-      .gallery-img:hover {
-        transform: scale(1.04);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-      }
-
-      .gallery-container { text-align: center; margin-top: 2rem; }
-
-      .gallery-container .btn-primary {
-        background: var(--blue-dark);
-        border: none;
-        border-radius: 20px;
-        padding: 0.5rem 1.6rem;
-        font-weight: 600;
-        transition: background 0.2s;
-      }
-      .gallery-container .btn-primary:hover {
+      .btn-register {
         background: var(--green-dark);
+        color: #fff;
+      }
+      .btn-register:hover {
+        background: #2e7d32;
+        color: #fff;
+        transform: translateY(-1px);
       }
 
-      /* ── Contact & Info ── */
-      .contact-section {
-        background: var(--blue-light);
-        border-radius: 12px;
-        padding: 3rem 2rem;
-        margin-top: 3rem;
+      /* horse icon (emoji fallback) */
+      .horse-icon {
+        font-size: 2.4rem;
+        margin-bottom: 0.6rem;
       }
-      .contact-section h2 { margin-bottom: 1.2rem; }
-      .contact-card {
-        background: #fff;
-        border-radius: 10px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-        height: 100%;
-      }
-      .contact-card h5 {
-        color: var(--green-dark);
-        font-weight: 700;
-        margin-bottom: 0.8rem;
-      }
-      .contact-card p, .contact-card li {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-      }
-      .contact-card ul { padding-left: 1.1rem; }
-      .contact-card a {
-        color: var(--blue-dark);
-        text-decoration: none;
-        font-weight: 600;
-      }
-      .contact-card a:hover { text-decoration: underline; }
-
-      /* ── Footer filler ── */
-      .filler {
-        height: 400px;
-        background: linear-gradient(180deg, #fff, var(--blue-light));
-        border-radius: 10px;
-        margin-top: 2rem;
-      }
-
-      /* smooth scroll for anchor links */
-      html { scroll-behavior: smooth; }
     </style>
   </head>
 
   <body>
-    <nav class="navbar navbar-expand-lg navbar-custom fixed-top navbar-dark">
-      <div class="container-fluid">
-        <a class="navbar-brand text-white" href="#">Horse Retirement Alachua</a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+    <!-- Top bar -->
+    <div class="top-bar">
+      <span class="brand">Horse Retirement Alachua</span>
+    </div>
 
-        <div class="collapse navbar-collapse" id="mainNav">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-            <li class="nav-item"><a class="nav-link" href="horses_page.html">Horses</a></li>
-            <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-          </ul>
+    <!-- Full-screen hero with centered card -->
+    <div class="hero-bg">
+      <div class="login-card">
+        <div class="horse-icon">&#x1F40E;</div>
+        <h1>Horse Retirement Alachua</h1>
+        <p class="subtitle">We Do It For The Horses</p>
 
-          <form class="d-flex" role="search" onsubmit="event.preventDefault(); alert('Search is a demo');">
-            <input class="form-control me-2" type="search" placeholder="Search horses" aria-label="Search" />
-            <button class="btn btn-sm btn-outline-light" type="submit">Search</button>
-          </form>
+        <a href="login_page.html" class="btn-login">Log In</a>
 
-          <a class="ms-3 btn btn-sm btn-cta" href="login_page.html">Login</a>
-        </div>
+        <hr class="divider">
+
+        <p class="section-label">New here?</p>
+        <a href="register_page.html" class="btn-register">Register</a>
       </div>
-    </nav>
-
-    <main>
-      <section class="hero text-center">
-        <div class="container">
-          <h1 class="display-6">Welcome to Alachua County Horse Retirement House</h1>
-          <p class="lead">We provide lifelong care and retirement for horses in Alachua County.</p>
-        </div>
-      </section>
-
-      <section class="container my-5">
-        <h2 id="about">About</h2>
-        <p>Insert informational content here. Add more paragraphs to test scrolling.</p>
-
-        <h3 class="mt-4">Gallery</h3>
-        <div class="row g-3 mt-2" id="gallery"></div>
-
-        <div class="gallery-container">
-          <button class="btn btn-primary" id="seeMoreBtn" style="display:none;">See More</button>
-        </div>
-      </section>
-
-      <!-- ── Contact & Information ── -->
-      <section class="container contact-section" id="contact">
-        <h2>Contact &amp; Information</h2>
-        <div class="row g-4">
-
-          <!-- Get in Touch -->
-          <div class="col-md-4">
-            <div class="contact-card">
-              <h5>Get in Touch</h5>
-              <p><strong>Email:</strong> <a href="mailto:info@horseretirementalachua.org">info@horseretirementalachua.org</a></p>
-              <p><strong>Phone:</strong> <a href="tel:+13525551234">(352) 555-1234</a></p>
-              <p><strong>Address:</strong><br>1234 Pasture Lane<br>Alachua, FL 32615</p>
-            </div>
-          </div>
-
-          <!-- Hours & Visits -->
-          <div class="col-md-4">
-            <div class="contact-card">
-              <h5>Hours &amp; Visits</h5>
-              <ul class="list-unstyled">
-                <li><strong>Mon – Fri:</strong> 9 AM – 5 PM</li>
-                <li><strong>Saturday:</strong> 10 AM – 3 PM</li>
-                <li><strong>Sunday:</strong> Closed</li>
-              </ul>
-              <p>Walk-ins welcome during open hours. Group tours available by appointment.</p>
-            </div>
-          </div>
-
-          <!-- How to Help -->
-          <div class="col-md-4">
-            <div class="contact-card">
-              <h5>How to Help</h5>
-              <ul>
-                <li>Sponsor a horse's monthly care</li>
-                <li>Volunteer at the ranch</li>
-                <li>Donate supplies (hay, blankets, tack)</li>
-                <li>Share our mission on social media</li>
-              </ul>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <div class="container"><div class="filler"></div></div>
-    </main>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
- <script>
-  (function () {
-    const gallery = document.getElementById('gallery');
-    const seeMoreBtn = document.getElementById('seeMoreBtn');
-
-    
-    const images = [
-      'Abby.jpg',
-      'Abe.jpg',
-      'Acero.jpg',
-      'Ahab.jpg',
-      'Alf.jpg',
-      'Amadeus.jpg',
-      'Andy.jpg',
-      'Annie.jpg'
-    ];
-
-    if (!gallery) return;
-
-    gallery.innerHTML = '';
-
-    // show first 5 by default
-    const displayImages = images.slice(0, 5);
-
-    displayImages.forEach((filename) => {
-      const col = document.createElement('div');
-      col.className = 'col-12 col-sm-6 col-md-4 col-lg-3';
-
-      // clickable wrapper
-      const link = document.createElement('a');
-      link.href = 'images/' + filename;
-      link.target = '_blank';
-      link.rel = 'noopener';
-
-      const img = document.createElement('img');
-      img.src = 'images/' + filename;
-      img.alt = filename;
-      img.className = 'gallery-img img-fluid';
-      img.loading = 'lazy';
-
-      // 🔍 DEBUG: tells you immediately if a file is missing
-      img.onerror = () => {
-        console.warn('❌ Image not found:', img.src);
-        img.style.display = 'none';
-      };
-
-      link.appendChild(img);
-      col.appendChild(link);
-      gallery.appendChild(col);
-    });
-
-    // If there are more than 5 images, show button and redirect to the login page
-    if (images.length > 5 && seeMoreBtn) {
-      seeMoreBtn.style.display = 'inline-block';
-      seeMoreBtn.onclick = () => {
-        window.location.href = 'login_page.html';
-      };
-    } else if (seeMoreBtn) {
-      seeMoreBtn.style.display = 'none';
-    }
-  })();
-</script>
-
   </body>
 </html>

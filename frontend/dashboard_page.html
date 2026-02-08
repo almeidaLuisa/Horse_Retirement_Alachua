@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard — Horse Retirement Alachua</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+
+    <style>
+      :root {
+        --green-light: #e8f5e9;
+        --green-mid:   #81c784;
+        --green-dark:  #388e3c;
+        --blue-light:  #e0f7fa;
+        --blue-dark:   #00796b;
+        --text-dark:   #263238;
+        --text-muted:  #546e7a;
+        --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Nunito', sans-serif;
+        color: var(--text-dark);
+        background: linear-gradient(170deg, var(--green-light) 0%, #f5faf6 40%, var(--blue-light) 100%);
+        min-height: 100vh;
+      }
+
+      /* ── Top bar ── */
+      .top-bar {
+        background: linear-gradient(90deg, var(--green-dark), var(--blue-dark));
+        padding: 0.65rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .top-bar .brand {
+        color: #fff;
+        font-weight: 800;
+        font-size: 1.15rem;
+        text-decoration: none;
+      }
+      .top-bar .brand:hover { opacity: 0.9; }
+      .top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .user-icon {
+        width: 38px; height: 38px;
+        background: rgba(255,255,255,0.2);
+        border: 2px solid rgba(255,255,255,0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.15rem;
+      }
+
+      /* ── Page header area ── */
+      .page-header {
+        background: linear-gradient(rgba(0,60,40,0.5), rgba(0,80,80,0.5)),
+                    url('images/Emmett & June.jpg') center/cover no-repeat;
+        padding: 2.5rem 2rem 2rem;
+        color: #fff;
+      }
+      .page-header h1 {
+        font-weight: 800;
+        font-size: 1.6rem;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      }
+      .page-header p {
+        opacity: 0.9;
+        font-size: 0.95rem;
+      }
+
+      /* ── Filter pills ── */
+      .filter-bar {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 1rem 0 0;
+      }
+      .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        border: 1.5px solid var(--green-mid);
+        background: rgba(255,255,255,0.25);
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .filter-pill:hover, .filter-pill.active {
+        background: rgba(255,255,255,0.45);
+      }
+
+      /* ── Dashboard grid ── */
+      .dash-grid {
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 1.25rem;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      @media (max-width: 576px) {
+        .dash-grid { grid-template-columns: 1fr; padding: 1rem; }
+      }
+
+      /* ── Cards ── */
+      .dash-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .dash-card-header {
+        padding: 1rem 1.25rem 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .dash-card-header h2 {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin: 0;
+      }
+      .dash-card-header .badge-count {
+        background: var(--green-mid);
+        color: #fff;
+        border-radius: 12px;
+        padding: 0.15rem 0.65rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+      .dash-card-body {
+        padding: 0.5rem 1.25rem 1.25rem;
+        flex: 1;
+      }
+
+      /* ── List items inside cards ── */
+      .item-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        padding: 0.65rem 0;
+        border-bottom: 1px solid #eceff1;
+      }
+      .item-row:last-child { border-bottom: none; }
+
+      .item-icon {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+      }
+      .icon-todo     { background: #fff3e0; color: #e65100; }
+      .icon-done     { background: var(--green-light); color: var(--green-dark); }
+      .icon-audit    { background: #e3f2fd; color: #1565c0; }
+      .icon-alert    { background: #fce4ec; color: #c62828; }
+
+      .item-text { flex: 1; }
+      .item-text .title {
+        font-weight: 700;
+        font-size: 0.92rem;
+        color: var(--text-dark);
+      }
+      .item-text .meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .item-text .tag {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.1rem 0.5rem;
+        border-radius: 10px;
+        margin-top: 2px;
+      }
+      .tag-pending  { background: #fff3e0; color: #e65100; }
+      .tag-complete { background: var(--green-light); color: var(--green-dark); }
+
+      /* ── Horse Database card ── */
+      .horse-db-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem 1.25rem;
+        text-decoration: none;
+        color: var(--text-dark);
+        transition: background 0.2s;
+        border-radius: 0 0 12px 12px;
+      }
+      .horse-db-link:hover { background: var(--green-light); }
+      .horse-db-icon {
+        width: 56px; height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--green-mid), var(--blue-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.6rem;
+        color: #fff;
+        flex-shrink: 0;
+      }
+      .horse-db-text h3 {
+        font-size: 1rem;
+        font-weight: 800;
+        margin: 0;
+      }
+      .horse-db-text p {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 0.15rem 0 0;
+      }
+      .horse-count-badge {
+        margin-left: auto;
+        background: var(--green-light);
+        color: var(--green-dark);
+        font-weight: 800;
+        font-size: 1.2rem;
+        padding: 0.3rem 0.9rem;
+        border-radius: 12px;
+      }
+
+      /* add-btn */
+      .add-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--blue-dark);
+        background: none;
+        border: 1.5px dashed var(--green-mid);
+        border-radius: 8px;
+        padding: 0.35rem 0.8rem;
+        cursor: pointer;
+        margin-top: 0.5rem;
+        transition: background 0.15s;
+      }
+      .add-btn:hover { background: var(--green-light); }
+
+      /* ── Scrollable card body ── */
+      .scroll-body {
+        max-height: 320px;
+        overflow-y: auto;
+      }
+      .scroll-body::-webkit-scrollbar { width: 5px; }
+      .scroll-body::-webkit-scrollbar-thumb { background: var(--green-mid); border-radius: 4px; }
+    </style>
+  </head>
+
+  <body>
+
+    <!-- ── Top bar ── -->
+    <div class="top-bar">
+      <a class="brand" href="home_page.html">
+        <i class="bi bi-house-door-fill"></i> Horse Retirement Alachua
+      </a>
+      <div class="top-bar-right">
+        <a href="user_profile_page.html" class="user-icon"><i class="bi bi-person-fill"></i></a>
+      </div>
+    </div>
+
+    <!-- ── Hero header ── -->
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Overview of daily operations, tasks &amp; horse records</p>
+
+      <div class="filter-bar">
+        <span class="filter-pill active"><i class="bi bi-check-circle-fill"></i> All</span>
+        <span class="filter-pill"><i class="bi bi-clipboard-pulse"></i> Daily Obs</span>
+        <span class="filter-pill"><i class="bi bi-list-check"></i> To-Do</span>
+        <span class="filter-pill"><i class="bi bi-journal-text"></i> Audit</span>
+      </div>
+    </div>
+
+    <!-- ── Dashboard Cards ── -->
+    <div class="dash-grid">
+
+      <!-- ▸ Daily Observations / To-Do -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2><i class="bi bi-clipboard-pulse"></i> Daily Observations &amp; To-Do</h2>
+          <span class="badge-count">5 items</span>
+        </div>
+        <div class="dash-card-body scroll-body">
+
+          <div class="item-row">
+            <div class="item-icon icon-alert"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Alf — weight check</div>
+              <div class="meta">Seized due to neglect; monitor weight gain weekly</div>
+              <span class="tag tag-pending">Pending</span>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-todo"><i class="bi bi-clock-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Acero — hind leg observation</div>
+              <div class="meta">Suspensory ligament issue; check for dragging</div>
+              <span class="tag tag-pending">Pending</span>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-done"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Abe — Equi-spot treatment</div>
+              <div class="meta">Applied 6/9/2025 — next treatment due soon</div>
+              <span class="tag tag-complete">Complete</span>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-todo"><i class="bi bi-clock-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Bandit — Cushings blood draw</div>
+              <div class="meta">Missed in 09/2025 — afraid of needles, needs IM sedative</div>
+              <span class="tag tag-pending">Pending</span>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-done"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Abby — daily feeding complete</div>
+              <div class="meta">Buttercup's Meadow — morning round done</div>
+              <span class="tag tag-complete">Complete</span>
+            </div>
+          </div>
+
+          <button class="add-btn"><i class="bi bi-plus-circle"></i> Add observation</button>
+        </div>
+      </div>
+
+      <!-- ▸ Audit Trail -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2><i class="bi bi-journal-text"></i> Audit Trail</h2>
+          <span class="badge-count">Recent</span>
+        </div>
+        <div class="dash-card-body scroll-body">
+
+          <div class="item-row">
+            <div class="item-icon icon-audit"><i class="bi bi-pencil-square"></i></div>
+            <div class="item-text">
+              <div class="title">Farrier visit logged — Acero</div>
+              <div class="meta">1/28/2026 · Shoe on right hind, sedated for trim</div>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-audit"><i class="bi bi-pencil-square"></i></div>
+            <div class="item-text">
+              <div class="title">Bandit — dental sedation</div>
+              <div class="meta">01/2026 · IM sedative first then IV after relaxed</div>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-audit"><i class="bi bi-person-plus-fill"></i></div>
+            <div class="item-text">
+              <div class="title">New intake — Alf</div>
+              <div class="meta">11/2025 · Thoroughbred seized by Citrus Co Animal Services</div>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-audit"><i class="bi bi-person-plus-fill"></i></div>
+            <div class="item-text">
+              <div class="title">New intake — Annie</div>
+              <div class="meta">05/2025 · Oldenburg donated by Orange County Sheriff</div>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-audit"><i class="bi bi-heart-pulse-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Field of Dreams — Breaker</div>
+              <div class="meta">9/22/2025 · Impacted grass in lower esophagus</div>
+            </div>
+          </div>
+
+          <div class="item-row">
+            <div class="item-icon icon-audit"><i class="bi bi-pencil-square"></i></div>
+            <div class="item-text">
+              <div class="title">Farrier visit — Alf</div>
+              <div class="meta">1/7/2026 · Gracie's Paddock</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ▸ Horse Database (clickable) -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2><i class="bi bi-database-fill"></i> Horse Database</h2>
+        </div>
+        <a href="horses_page.html" class="horse-db-link">
+          <div class="horse-db-icon">&#x1F40E;</div>
+          <div class="horse-db-text">
+            <h3>View All Horses</h3>
+            <p>Browse profiles, medical records &amp; field assignments</p>
+          </div>
+          <span class="horse-count-badge" id="horseCount">170</span>
+        </a>
+        <div class="dash-card-body" style="padding-top:0;">
+          <div class="item-row">
+            <div class="item-icon icon-done"><i class="bi bi-search"></i></div>
+            <div class="item-text">
+              <div class="title">Search &amp; Filter</div>
+              <div class="meta">By name, breed, field, medical condition</div>
+            </div>
+          </div>
+          <div class="item-row">
+            <div class="item-icon" style="background:#ede7f6;color:#5e35b1;"><i class="bi bi-file-earmark-medical-fill"></i></div>
+            <div class="item-text">
+              <div class="title">Individual Horse Pages</div>
+              <div class="meta">Treatments, docs, action items &amp; notes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ▸ Quick Stats -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2><i class="bi bi-bar-chart-fill"></i> Quick Stats</h2>
+        </div>
+        <div class="dash-card-body">
+          <div class="row g-3 text-center">
+            <div class="col-4">
+              <div style="background:var(--green-light);border-radius:10px;padding:1rem 0.5rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:var(--green-dark);">170</div>
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Total Horses</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div style="background:#fff3e0;border-radius:10px;padding:1rem 0.5rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:#e65100;">3</div>
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Pending Tasks</div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div style="background:var(--blue-light);border-radius:10px;padding:1rem 0.5rem;">
+                <div style="font-size:1.6rem;font-weight:800;color:var(--blue-dark);">20+</div>
+                <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Fields</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /dash-grid -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
