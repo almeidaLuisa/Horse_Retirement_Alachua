@@ -68,7 +68,7 @@ def register():
             'first_name': first_name,
             'last_name': last_name,
             'phone': phone,
-            'role': 'user',
+            'role': data.get('role', 'user'),
             'is_active': True,
             'created_at': datetime.utcnow(),
             'last_login': None

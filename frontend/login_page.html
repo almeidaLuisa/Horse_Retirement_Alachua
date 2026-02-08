@@ -65,6 +65,31 @@
         .d-none {
             display: none !important;
         }
+
+        /* Role selector */
+        .role-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+        }
+        .role-btn {
+            flex: 1;
+            padding: 8px 6px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            background: #fff;
+            color: #546e7a;
+            font-weight: 700;
+            font-size: 0.78rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .role-btn:hover { border-color: var(--primary-blue); color: var(--primary-blue); }
+        .role-btn.active-viewer { border-color: var(--primary-blue); background: #e3f2fd; color: #1565c0; }
+        .role-btn.active-editor { border-color: #e65100; background: #fff3e0; color: #e65100; }
+        .role-btn.active-admin { border-color: #388e3c; background: #e8f5e9; color: #388e3c; }
+        .role-btn i { display: block; font-size: 1.1rem; margin-bottom: 2px; }
     </style>
 </head>
 <body>
@@ -103,6 +128,19 @@
 
                 <div id="registerSection" class="d-none">
                     <h4 class="text-center mb-4">Create Account</h4>
+
+                    <label class="form-label" style="font-weight:700;font-size:0.85rem;">Register as:</label>
+                    <div class="role-selector">
+                      <div class="role-btn active-viewer" id="roleViewer" onclick="selectRole('user')">
+                        <i class="fa-solid fa-eye"></i> Viewer
+                      </div>
+                      <div class="role-btn" id="roleEditor" onclick="selectRole('editor')">
+                        <i class="fa-solid fa-pen"></i> Editor
+                      </div>
+                      <div class="role-btn" id="roleAdmin" onclick="selectRole('admin')">
+                        <i class="fa-solid fa-shield-halved"></i> Admin
+                      </div>
+                    </div>
                     
                     <form onsubmit="handleRegister(event)">
                         <div class="row">
@@ -148,6 +186,19 @@
 
     <script>
         const API_URL = "http://127.0.0.1:5000/api/auth";
+        let selectedRole = 'user'; // default
+
+        function selectRole(role) {
+          selectedRole = role;
+          // Clear all active states
+          document.getElementById('roleViewer').className = 'role-btn';
+          document.getElementById('roleEditor').className = 'role-btn';
+          document.getElementById('roleAdmin').className = 'role-btn';
+          // Set active
+          if (role === 'user') document.getElementById('roleViewer').classList.add('active-viewer');
+          else if (role === 'editor') document.getElementById('roleEditor').classList.add('active-editor');
+          else if (role === 'admin') document.getElementById('roleAdmin').classList.add('active-admin');
+        }
 
         function showRegister() {
             document.getElementById('loginSection').classList.add('d-none');
@@ -187,8 +238,8 @@
                     // --- KEY UPDATE: Saving Email and Role ---
                     console.log("Login Success:", data);
                     localStorage.setItem('user_name', data.user.first_name);
-                    localStorage.setItem('user_email', data.user.email); // Vital for Profile Page
-                    localStorage.setItem('user_role', data.user.role);   // Vital for Permissions
+                    localStorage.setItem('user_email', data.user.email);
+                    localStorage.setItem('user_role', data.user.role); // Role from database
                     
                     window.location.href = "dashboard_page.html";
                 } else {
@@ -208,7 +259,8 @@
                 last_name: document.getElementById('regLastName').value,
                 phone: document.getElementById('regPhone').value,
                 email: document.getElementById('regEmail').value,
-                password: document.getElementById('regPassword').value
+                password: document.getElementById('regPassword').value,
+                role: selectedRole
             };
 
             const errorDiv = document.getElementById('regError');

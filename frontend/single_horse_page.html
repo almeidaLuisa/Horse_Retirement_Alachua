@@ -642,8 +642,8 @@
       // Permission check
       function isAdmin() {
         const role = (localStorage.getItem('user_role') || '').toLowerCase();
-        if (role !== 'admin') {
-          showToast("🔒 You don't have permission to do this.", '#c62828');
+        if (role !== 'admin' && role !== 'editor') {
+          showToast("🔒 You don't have permission to edit. Viewer access only.", '#c62828');
           return false;
         }
         return true;

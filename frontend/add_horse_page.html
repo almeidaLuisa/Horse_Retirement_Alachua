@@ -251,7 +251,7 @@
 
       // Save horse to MongoDB via Flask
       async function saveHorse() {
-        if (!checkAdmin()) return;
+        if (!checkEditor()) return;
         const name = document.getElementById('name').value.trim();
         if (!name) {
           alert('Please enter a horse name!');
@@ -299,9 +299,9 @@
       }
 
       // Permission check
-      function checkAdmin() {
+      function checkEditor() {
         const role = (localStorage.getItem('user_role') || '').toLowerCase();
-        if (role !== 'admin') {
+        if (role !== 'admin' && role !== 'editor') {
           showStatus("🔒 You don't have permission to do this.", "#c62828");
           return false;
         }
