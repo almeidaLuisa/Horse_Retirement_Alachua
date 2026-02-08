@@ -182,7 +182,109 @@ def change_password(current_user):
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-# ========== HEALTH CHECK ==========
+# ========== HORSE MANAGEMENT ROUTES ==========
+
+@app.route('/api/user/horses', methods=['GET'])
+@token_required
+def get_user_horses(current_user):
+    """Get all horses managed by the current user"""
+    try:
+        horses, message = user_manager.get_user_horses(current_user['user_id'])
+        
+        if horses is None:
+            return jsonify({'error': message}), 404
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'horses': horses,
+            'count': len(horses) if isinstance(horses, list) else 0
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/user/horses/<horse_id>', methods=['POST'])
+@token_required
+def assign_horse(current_user, horse_id):
+    """Assign a horse to the current user"""
+    try:
+        success, message = user_manager.assign_horse_to_user(current_user['user_id'], horse_id)
+        
+        if not success:
+            return jsonify({'error': message}), 400
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'horse_id': horse_id
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/user/horses/<horse_id>', methods=['DELETE'])
+@token_required
+def unassign_horse(current_user, horse_id):
+    """Remove a horse from the current user's management"""
+    try:
+        success, message = user_manager.unassign_horse_from_user(current_user['user_id'], horse_id)
+        
+        if not success:
+            return jsonify({'error': message}), 400
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'horse_id': horse_id
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+# ========== DATABASE STATISTICS ==========
+
+@app.route('/api/admin/stats', methods=['GET'])
+@token_required
+def get_stats(current_user):
+    """Get database statistics (admin only)"""
+    try:
+        # Check if user is admin
+        if current_user.get('role') != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        stats = user_manager.get_database_stats()
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/admin/audit-logs', methods=['GET'])
+@token_required
+def get_audit_logs(current_user):
+    """Get audit logs (admin only)"""
+    try:
+        # Check if user is admin
+        if current_user.get('role') != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        limit = request.args.get('limit', 100, type=int)
+        logs = user_manager.get_audit_logs(limit=limit)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs)
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
