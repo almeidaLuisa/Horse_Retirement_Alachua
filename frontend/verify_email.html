@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verify Email — Retirement Home for Horses</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #9CD479;
+            --primary-blue: #79AED4;
+        }
+        body {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-blue) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Nunito', sans-serif;
+        }
+        .verify-container {
+            max-width: 480px;
+            width: 100%;
+            margin: auto;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            text-align: center;
+            padding: 2.5rem 2rem;
+        }
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .status-icon.loading { color: var(--primary-blue); }
+        .status-icon.success { color: #388e3c; }
+        .status-icon.error { color: #c62828; }
+        h2 { font-weight: 800; color: #333; margin-bottom: 0.5rem; }
+        p { color: #666; font-size: 0.95rem; }
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-blue));
+            color: #fff;
+            border: none;
+            padding: 12px 36px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
+            transition: opacity 0.2s;
+        }
+        .btn-login:hover { opacity: 0.9; color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <div class="card">
+            <div id="loadingState">
+                <div class="status-icon loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                </div>
+                <h2>Verifying your email...</h2>
+                <p>Please wait a moment.</p>
+            </div>
+
+            <div id="successState" style="display:none;">
+                <div class="status-icon success">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <h2>Email Verified!</h2>
+                <p>Your account is now active. You can log in and start using the system.</p>
+                <a href="login_page.html" class="btn-login">Go to Login</a>
+            </div>
+
+            <div id="errorState" style="display:none;">
+                <div class="status-icon error">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <h2>Verification Failed</h2>
+                <p id="errorMsg">This link may be invalid or expired.</p>
+                <a href="login_page.html" class="btn-login" style="background:linear-gradient(135deg,#ef5350,#c62828);">Back to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:5000/api/auth";
+
+        async function verifyEmail() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+
+            if (!token) {
+                showError('No verification token found in the URL.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess();
+                } else {
+                    showError(data.error || 'Verification failed.');
+                }
+            } catch (err) {
+                console.error(err);
+                showError('Could not connect to the server. Is it running?');
+            }
+        }
+
+        function showSuccess() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('successState').style.display = 'block';
+        }
+
+        function showError(msg) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMsg').innerText = msg;
+        }
+
+        // Run on page load
+        verifyEmail();
+    </script>
+</body>
+</html>

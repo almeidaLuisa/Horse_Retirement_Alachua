@@ -5,11 +5,22 @@ from pymongo.server_api import ServerApi
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 from datetime import datetime
+import smtplib
+import secrets
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # --- CONFIGURATION ---
 app = Flask(__name__)
 # Allow CORS for all domains
 CORS(app)
+
+# Email Configuration
+SMTP_EMAIL = 'luisalmeida0106@gmail.com'
+SMTP_APP_PASSWORD = 'oqrx kaip oppt pmtt'
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+FRONTEND_URL = 'http://127.0.0.1:5500/frontend'  # Adjust to your Live Server URL
 
 # Database Connection
 URI = "mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary"
@@ -35,6 +46,48 @@ def format_doc(doc):
     if not doc: return None
     doc['_id'] = str(doc['_id'])
     return doc
+
+def send_verification_email(to_email, first_name, token):
+    """Send a verification email with a clickable link."""
+    verify_url = f"{FRONTEND_URL}/verify_email.html?token={token}"
+    
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = 'Verify your email — Retirement Home for Horses'
+    msg['From'] = SMTP_EMAIL
+    msg['To'] = to_email
+    
+    html = f"""
+    <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:2rem;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+            <h1 style="color:#388e3c;margin:0;">🐴 Retirement Home for Horses</h1>
+        </div>
+        <h2 style="color:#333;">Welcome, {first_name}!</h2>
+        <p style="color:#555;font-size:1rem;line-height:1.6;">
+            Thank you for registering. Please verify your email address by clicking the button below:
+        </p>
+        <div style="text-align:center;margin:2rem 0;">
+            <a href="{verify_url}" style="background:linear-gradient(135deg,#9CD479,#79AED4);color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:bold;font-size:1rem;display:inline-block;">Verify My Email</a>
+        </div>
+        <p style="color:#999;font-size:0.85rem;text-align:center;">If the button doesn't work, paste this link in your browser:<br>
+            <a href="{verify_url}" style="color:#79AED4;">{verify_url}</a>
+        </p>
+        <hr style="border:none;border-top:1px solid #eee;margin:2rem 0;">
+        <p style="color:#bbb;font-size:0.75rem;text-align:center;">Retirement Home for Horses, Inc. — Alachua, FL</p>
+    </div>
+    """
+    
+    msg.attach(MIMEText(html, 'html'))
+    
+    try:
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        print(f"✅ Verification email sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
+        return False
 
 # --- ROOT ---
 @app.route('/', methods=['GET'])
@@ -70,11 +123,16 @@ def register():
             'phone': phone,
             'role': data.get('role', 'user'),
             'is_active': True,
+            'email_verified': False,
+            'verification_token': secrets.token_urlsafe(32),
             'created_at': datetime.utcnow(),
             'last_login': None
         }
 
         user_logins.insert_one(new_user)
+
+        # Send verification email
+        send_verification_email(email, first_name, new_user['verification_token'])
 
         # Log to audit trail
         audit_collection.insert_one({
@@ -85,7 +143,7 @@ def register():
             'timestamp': datetime.utcnow()
         })
 
-        return jsonify({'message': 'Account created successfully!'}), 201
+        return jsonify({'message': 'Account created! Check your email to verify.'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -103,6 +161,10 @@ def login():
 
         if not user or not check_password_hash(user['password'], password):
             return jsonify({'error': 'Incorrect email or password.'}), 401
+
+        # Check email verification
+        if not user.get('email_verified', False):
+            return jsonify({'error': 'Please verify your email before logging in. Check your inbox.'}), 403
             
         user_logins.update_one(
             {'_id': user['_id']},
@@ -129,6 +191,59 @@ def login():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/auth/verify', methods=['POST'])
+def verify_email():
+    try:
+        data = request.json
+        token = data.get('token')
+        if not token:
+            return jsonify({'error': 'Verification token is required.'}), 400
+
+        user = user_logins.find_one({'verification_token': token})
+        if not user:
+            return jsonify({'error': 'Invalid or expired verification link.'}), 404
+
+        if user.get('email_verified'):
+            return jsonify({'message': 'Email already verified! You can log in.'}), 200
+
+        user_logins.update_one(
+            {'_id': user['_id']},
+            {'$set': {'email_verified': True}, '$unset': {'verification_token': ''}}
+        )
+
+        return jsonify({'message': 'Email verified successfully! You can now log in.'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/auth/resend-verification', methods=['POST'])
+def resend_verification():
+    try:
+        data = request.json
+        email = data.get('email')
+        if not email:
+            return jsonify({'error': 'Email is required.'}), 400
+
+        user = user_logins.find_one({'email': email})
+        if not user:
+            return jsonify({'error': 'No account found with this email.'}), 404
+
+        if user.get('email_verified'):
+            return jsonify({'message': 'Email is already verified.'}), 200
+
+        new_token = secrets.token_urlsafe(32)
+        user_logins.update_one(
+            {'_id': user['_id']},
+            {'$set': {'verification_token': new_token}}
+        )
+
+        send_verification_email(email, user.get('first_name', 'User'), new_token)
+        return jsonify({'message': 'Verification email resent! Check your inbox.'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/user/profile', methods=['GET'])
 def get_user_profile():

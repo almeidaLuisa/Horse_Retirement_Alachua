@@ -247,6 +247,9 @@
                     localStorage.setItem('user_role', data.user.role); // Role from database
                     
                     window.location.href = "dashboard_page.html";
+                } else if (response.status === 403) {
+                    // Unverified email
+                    errorDiv.innerHTML = `${data.error}<br><a href="#" onclick="resendVerification('${email}')" style="color:var(--primary-blue);font-weight:700;">Resend verification email</a>`;
                 } else {
                     errorDiv.innerText = data.error || "Login failed.";
                 }
@@ -269,6 +272,7 @@
             };
 
             const errorDiv = document.getElementById('regError');
+            errorDiv.style.color = '#dc3545';
             errorDiv.innerText = "Creating account...";
 
             try {
@@ -281,14 +285,39 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert("Account Created Successfully! Click OK to return to Login.");
-                    showLogin(); 
+                    document.getElementById('regError').innerHTML = '';
+                    document.getElementById('regError').style.color = '';
+                    // Show verification message
+                    const regSection = document.querySelector('#registerSection form');
+                    regSection.innerHTML = `
+                        <div style="text-align:center;padding:1rem 0;">
+                            <i class="fa-solid fa-envelope-circle-check" style="font-size:3rem;color:var(--primary-green);margin-bottom:1rem;"></i>
+                            <h5 style="color:#333;font-weight:700;">Check your email!</h5>
+                            <p style="color:#666;font-size:0.9rem;">We sent a verification link to <strong>${userData.email}</strong>. Click it to activate your account.</p>
+                            <p style="color:#999;font-size:0.8rem;">Didn't get it? Check spam or <a href="#" onclick="resendVerification('${userData.email}')" style="color:var(--primary-blue);font-weight:700;">resend email</a></p>
+                            <button onclick="showLogin()" class="btn btn-primary w-100 mt-3">Back to Login</button>
+                        </div>
+                    `; 
                 } else {
                     errorDiv.innerText = data.error || "Registration failed.";
                 }
             } catch (err) {
                 console.error(err);
                 errorDiv.innerText = "Server error. Is python app.py running?";
+            }
+        }
+
+        async function resendVerification(email) {
+            try {
+                const res = await fetch(`${API_URL}/resend-verification`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                alert(data.message || 'Verification email resent!');
+            } catch (err) {
+                alert('Could not resend. Is the server running?');
             }
         }
     </script>
