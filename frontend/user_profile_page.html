@@ -142,8 +142,111 @@
                 </div>
               </div>
 
+              <div class="row mb-3">
+                <div class="col">
+                  <label class="form-label text-muted small">Password</label>
+                  <div class="d-flex align-items-center gap-2">
+                    <input type="text" class="form-control" value="••••••••••" disabled style="letter-spacing:3px;font-weight:700;">
+                    <a href="#changePasswordCard" class="btn btn-outline-primary btn-sm text-nowrap" onclick="document.getElementById('changePasswordCard').scrollIntoView({behavior:'smooth'})">
+                      <i class="bi bi-pencil me-1"></i>Change
+                    </a>
+                  </div>
+                </div>
+              </div>
+
             </form>
           </div>
+
+          <!-- Change Password Card -->
+          <div class="card profile-card p-4 mt-4" id="changePasswordCard">
+            <h4 class="mb-3 text-secondary"><i class="bi bi-lock-fill me-2"></i>Change Password</h4>
+            <p class="text-muted small mb-4">Enter your current password and choose a new one.</p>
+            <div id="pwStatus" class="alert d-none mb-3 small"></div>
+            <form onsubmit="changePassword(event)">
+              <div class="mb-3">
+                <label class="form-label text-muted small">Current Password</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="currentPw" required>
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePw('currentPw', this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small">New Password</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="newPw" required minlength="6">
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePw('newPw', this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label text-muted small">Confirm New Password</label>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="confirmPw" required minlength="6">
+                  <button class="btn btn-outline-secondary" type="button" onclick="togglePw('confirmPw', this)" tabindex="-1"><i class="bi bi-eye"></i></button>
+                </div>
+              </div>
+              <div class="text-end">
+                <button type="submit" class="btn btn-sm px-4 py-2 fw-bold" 
+                  style="background:linear-gradient(135deg,var(--primary-green),var(--primary-blue));color:#fff;border:none;border-radius:10px;">
+                  <i class="bi bi-shield-lock me-1"></i>Update Password
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Notifications Card -->
+          <div class="card profile-card p-4 mt-4">
+            <h4 class="mb-3 text-secondary"><i class="bi bi-bell-fill me-2"></i>Notification Preferences</h4>
+            <p class="text-muted small mb-4">Choose which email notifications you'd like to receive.</p>
+
+            <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+              <div>
+                <div class="fw-bold" style="font-size:0.95rem;"><i class="bi bi-clipboard2-check me-2 text-warning"></i>To-Do Reminders</div>
+                <div class="text-muted small">Get reminded about upcoming or overdue to-do items</div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="notifTodo" style="width:3rem;height:1.5rem;cursor:pointer;" checked>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+              <div>
+                <div class="fw-bold" style="font-size:0.95rem;"><i class="bi bi-journal-text me-2 text-primary"></i>New Observations</div>
+                <div class="text-muted small">Get notified when a new observation or note is added</div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="notifObs" style="width:3rem;height:1.5rem;cursor:pointer;" checked>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+              <div>
+                <div class="fw-bold" style="font-size:0.95rem;"><i class="bi bi-heart-pulse me-2 text-danger"></i>Horse Updates</div>
+                <div class="text-muted small">Get notified when a horse record is added or updated</div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="notifHorse" style="width:3rem;height:1.5rem;cursor:pointer;">
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center py-3">
+              <div>
+                <div class="fw-bold" style="font-size:0.95rem;"><i class="bi bi-shield-exclamation me-2 text-success"></i>Security Alerts</div>
+                <div class="text-muted small">Get notified about logins and account changes</div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="notifSecurity" style="width:3rem;height:1.5rem;cursor:pointer;" checked>
+              </div>
+            </div>
+
+            <div class="mt-3 text-end">
+              <button class="btn btn-sm px-4 py-2 fw-bold" id="btnSaveNotifs" onclick="saveNotifPrefs()" 
+                style="background:linear-gradient(135deg,var(--primary-green),var(--primary-blue));color:#fff;border:none;border-radius:10px;">
+                <i class="bi bi-check-lg me-1"></i>Save Preferences
+              </button>
+              <div id="notifStatus" class="alert d-none mt-2 mb-0 small"></div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -292,8 +395,97 @@
           window.location.href = 'home_page.html';
       }
 
+      // 5. CHANGE PASSWORD
+      function togglePw(fieldId, btn) {
+          const input = document.getElementById(fieldId);
+          const icon = btn.querySelector('i');
+          if (input.type === 'password') {
+              input.type = 'text';
+              icon.className = 'bi bi-eye-slash';
+          } else {
+              input.type = 'password';
+              icon.className = 'bi bi-eye';
+          }
+      }
+
+      async function changePassword(e) {
+          e.preventDefault();
+          const statusEl = document.getElementById('pwStatus');
+          const currentPw = document.getElementById('currentPw').value;
+          const newPw = document.getElementById('newPw').value;
+          const confirmPw = document.getElementById('confirmPw').value;
+
+          if (newPw.length < 6) {
+              statusEl.className = 'alert alert-danger mb-3 small';
+              statusEl.innerText = 'New password must be at least 6 characters.';
+              statusEl.classList.remove('d-none');
+              return;
+          }
+          if (newPw !== confirmPw) {
+              statusEl.className = 'alert alert-danger mb-3 small';
+              statusEl.innerText = 'New passwords do not match.';
+              statusEl.classList.remove('d-none');
+              return;
+          }
+
+          try {
+              const response = await fetch('http://127.0.0.1:5000/api/user/change-password', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      email: userEmail,
+                      current_password: currentPw,
+                      new_password: newPw
+                  })
+              });
+              const data = await response.json();
+              if (response.ok) {
+                  statusEl.className = 'alert alert-success mb-3 small';
+                  statusEl.innerText = 'Password changed successfully!';
+                  document.getElementById('currentPw').value = '';
+                  document.getElementById('newPw').value = '';
+                  document.getElementById('confirmPw').value = '';
+              } else {
+                  statusEl.className = 'alert alert-danger mb-3 small';
+                  statusEl.innerText = data.error || 'Failed to change password.';
+              }
+              statusEl.classList.remove('d-none');
+              setTimeout(() => statusEl.classList.add('d-none'), 5000);
+          } catch (err) {
+              console.error(err);
+              statusEl.className = 'alert alert-danger mb-3 small';
+              statusEl.innerText = 'Server error. Is the Flask server running?';
+              statusEl.classList.remove('d-none');
+          }
+      }
+
+      // 6. NOTIFICATION PREFERENCES (frontend-only for now)
+      function loadNotifPrefs() {
+          const prefs = JSON.parse(localStorage.getItem('notif_prefs') || '{}');
+          document.getElementById('notifTodo').checked = prefs.todo !== false;       // default on
+          document.getElementById('notifObs').checked = prefs.obs !== false;         // default on
+          document.getElementById('notifHorse').checked = prefs.horse === true;      // default off
+          document.getElementById('notifSecurity').checked = prefs.security !== false; // default on
+      }
+
+      function saveNotifPrefs() {
+          const prefs = {
+              todo: document.getElementById('notifTodo').checked,
+              obs: document.getElementById('notifObs').checked,
+              horse: document.getElementById('notifHorse').checked,
+              security: document.getElementById('notifSecurity').checked
+          };
+          localStorage.setItem('notif_prefs', JSON.stringify(prefs));
+
+          const statusEl = document.getElementById('notifStatus');
+          statusEl.className = 'alert alert-success mt-2 mb-0 small';
+          statusEl.innerText = 'Notification preferences saved!';
+          statusEl.classList.remove('d-none');
+          setTimeout(() => statusEl.classList.add('d-none'), 3000);
+      }
+
       // Start
-      if (userEmail) loadProfile();
+      if (userEmail) { loadProfile(); loadNotifPrefs(); }
     </script>
   </body>
 </html>

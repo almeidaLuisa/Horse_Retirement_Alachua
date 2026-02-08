@@ -301,6 +301,47 @@ def update_user_profile():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/user/change-password', methods=['PUT'])
+def change_password():
+    try:
+        data = request.json
+        email = data.get('email')
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+
+        if not email or not current_password or not new_password:
+            return jsonify({'error': 'All fields are required.'}), 400
+
+        if len(new_password) < 6:
+            return jsonify({'error': 'New password must be at least 6 characters.'}), 400
+
+        user = user_logins.find_one({'email': email})
+        if not user:
+            return jsonify({'error': 'User not found.'}), 404
+
+        if not check_password_hash(user['password'], current_password):
+            return jsonify({'error': 'Current password is incorrect.'}), 401
+
+        new_hash = generate_password_hash(new_password)
+        user_logins.update_one(
+            {'email': email},
+            {'$set': {'password': new_hash}}
+        )
+
+        # Audit log
+        audit_collection.insert_one({
+            'action': 'CHANGE_PASSWORD',
+            'table': 'User_Logins',
+            'user_id': email,
+            'details': {'email': email},
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Password changed successfully.'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ==========================================
 #      SECTION 2: HORSE MANAGEMENT
 # ==========================================
