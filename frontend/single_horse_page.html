@@ -399,17 +399,36 @@
 
     <div class="section">
         <h2>Documents Table</h2>
-        <table>
-            <tr>
-                <th>Document</th>
-                <th>Type</th>
-                <th>Actions</th>
-            </tr>
-            <tr>
-                <td contenteditable="true">Document Name</td>
-                <td contenteditable="true">Type</td>
-                <td><span class="icon" title="Download"><i class="bi bi-download"></i></span> <span class="icon" title="Delete"><i class="bi bi-trash"></i></span></td>
-            </tr>
+
+        <!-- Upload form (editors/admins only) -->
+        <div id="docUploadForm" style="display:none; margin-bottom:1rem; padding:1rem; background:#f9f9f9; border-radius:10px;">
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:end;">
+                <div style="flex:1; min-width:180px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Image File</label>
+                    <input type="file" id="docFileInput" accept="image/*" class="form-control" style="font-size:0.9rem;">
+                </div>
+                <div style="flex:1; min-width:180px;">
+                    <label style="font-weight:600; font-size:0.85rem;">Description</label>
+                    <input type="text" id="docDescription" placeholder="e.g. Vet report, Farrier receipt" class="form-control" style="font-size:0.9rem;">
+                </div>
+                <button onclick="uploadDoc()" style="height:38px; padding:0 1.25rem; background:linear-gradient(135deg,#9CD479,#79AED4); color:#fff; border:none; border-radius:8px; font-weight:700; cursor:pointer;">
+                    <i class="bi bi-upload"></i> Upload
+                </button>
+            </div>
+        </div>
+
+        <table id="docsTable">
+            <thead>
+                <tr>
+                    <th>Preview</th>
+                    <th>Description</th>
+                    <th>Uploaded</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="docsTableBody">
+                <tr><td colspan="4" style="text-align:center; color:#999;">Loading documents…</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -691,6 +710,10 @@
         if (role === 'admin') {
           document.getElementById('btnDelete').style.display = 'inline-flex';
         }
+        // Show doc upload form for editors/admins
+        if (role === 'admin' || role === 'editor') {
+          document.getElementById('docUploadForm').style.display = 'block';
+        }
       })();
 
       // Permission check
@@ -702,6 +725,132 @@
         }
         return true;
       }
+
+      // ═══════════════════════════════════════
+      //        DOCUMENTS TABLE
+      // ═══════════════════════════════════════
+
+      async function loadDocs() {
+        if (!horseName) return;
+        const tbody = document.getElementById('docsTableBody');
+        try {
+          const res = await fetch(`/api/docs/${encodeURIComponent(horseName)}`);
+          const docs = await res.json();
+          if (!docs.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">No documents uploaded yet.</td></tr>';
+            return;
+          }
+          tbody.innerHTML = docs.map(d => {
+            const date = d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString() : '—';
+            const role = (localStorage.getItem('user_role') || '').toLowerCase();
+            const canDelete = role === 'admin' || role === 'editor';
+            const isImage = d.file_data && d.file_data.startsWith('data:image');
+            const preview = isImage
+              ? `<img src="${d.file_data}" style="max-width:80px;max-height:60px;border-radius:6px;cursor:pointer;object-fit:cover;" onclick="viewDoc('${d._id}')" title="Click to view full size">`
+              : `<i class="bi bi-file-earmark" style="font-size:1.5rem;color:#888;"></i>`;
+            return `<tr>
+              <td style="text-align:center;">${preview}</td>
+              <td>${d.description || d.file_name || '—'}</td>
+              <td>${date}</td>
+              <td>
+                ${isImage ? `<span class="icon" title="View" style="cursor:pointer;" onclick="viewDoc('${d._id}')"><i class="bi bi-eye"></i></span> ` : ''}
+                ${canDelete ? `<span class="icon" title="Delete" style="cursor:pointer;color:#c62828;" onclick="deleteDoc('${d._id}','${(d.description || d.file_name || '').replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></span>` : ''}
+              </td>
+            </tr>`;
+          }).join('');
+        } catch (e) {
+          console.error('Error loading docs:', e);
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#c62828;">Failed to load documents.</td></tr>';
+        }
+      }
+
+      // Store loaded docs for viewing
+      let _loadedDocs = [];
+      async function viewDoc(docId) {
+        // Fetch the doc data to show full-size image
+        try {
+          const res = await fetch(`/api/docs/${encodeURIComponent(horseName)}`);
+          const docs = await res.json();
+          const doc = docs.find(d => d._id === docId);
+          if (doc && doc.file_data) {
+            const win = window.open('', '_blank');
+            win.document.write(`
+              <html><head><title>${doc.description || doc.file_name || 'Document'}</title>
+              <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#222;}</style></head>
+              <body><img src="${doc.file_data}" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);"></body></html>
+            `);
+          }
+        } catch (e) {
+          showToast('Could not load document.', '#c62828');
+        }
+      }
+
+      async function uploadDoc() {
+        if (!isAdmin()) return;
+        const fileInput = document.getElementById('docFileInput');
+        const descInput = document.getElementById('docDescription');
+        const file = fileInput.files[0];
+
+        if (!file) {
+          showToast('Please select a file to upload.', '#c62828');
+          return;
+        }
+
+        // Read file as base64
+        const reader = new FileReader();
+        reader.onload = async function() {
+          const base64 = reader.result; // data:image/...;base64,...
+          try {
+            const res = await fetch(`/api/docs/${encodeURIComponent(horseName)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                file_data: base64,
+                file_name: file.name,
+                description: descInput.value.trim(),
+                user_email: localStorage.getItem('user_email') || 'Unknown'
+              })
+            });
+            if (res.ok) {
+              showToast('Document uploaded!', '#388e3c');
+              fileInput.value = '';
+              descInput.value = '';
+              loadDocs();
+            } else {
+              const err = await res.json();
+              showToast('Error: ' + (err.error || 'Upload failed.'), '#c62828');
+            }
+          } catch (e) {
+            console.error('Upload error:', e);
+            showToast('Server error during upload.', '#c62828');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      async function deleteDoc(docId, docName) {
+        if (!isAdmin()) return;
+        if (!confirm(`Delete document "${docName}"? This cannot be undone.`)) return;
+        try {
+          const userEmail = localStorage.getItem('user_email') || 'Unknown';
+          const res = await fetch(`/api/docs/${encodeURIComponent(horseName)}/${docId}?user_email=${encodeURIComponent(userEmail)}`, {
+            method: 'DELETE'
+          });
+          if (res.ok) {
+            showToast('Document deleted.', '#388e3c');
+            loadDocs();
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not delete.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Delete doc error:', e);
+          showToast('Server error.', '#c62828');
+        }
+      }
+
+      // Load docs on page load
+      loadDocs();
     </script>
 </body>
 </html>

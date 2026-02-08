@@ -39,6 +39,7 @@ try:
     audit_collection = db['Audits']
     # RESTORED: Daily Obs Collection
     daily_obs_collection = db['DailyObs_Tables']
+    docs_collection = db['Docs_Tables']
     
     print(f"✅ UNIFIED SERVER CONNECTED to {DB_NAME}")
 except Exception as e:
@@ -822,6 +823,83 @@ def delete_horse(id):
         send_change_notification('DELETE_HORSE', user_email, audit_details)
 
         return jsonify({'message': 'Horse deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==========================================
+#      SECTION 2.6: HORSE DOCUMENTS
+# ==========================================
+
+@app.route('/api/docs/<horse_name>', methods=['GET'])
+def get_horse_docs(horse_name):
+    """Get all documents for a specific horse."""
+    try:
+        docs = list(docs_collection.find({'horse_name': horse_name}).sort('uploaded_at', -1))
+        for d in docs:
+            d['_id'] = str(d['_id'])
+        return jsonify(docs), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/docs/<horse_name>', methods=['POST'])
+def upload_horse_doc(horse_name):
+    """Upload a document (image file as base64) for a horse."""
+    try:
+        data = request.json
+        description = data.get('description', '').strip()
+        file_data = data.get('file_data')       # base64 string
+        file_name = data.get('file_name', '')
+        user_email = data.get('user_email', 'Unknown')
+
+        if not file_data:
+            return jsonify({'error': 'No file data provided.'}), 400
+
+        doc = {
+            'horse_name': horse_name,
+            'description': description or file_name,
+            'file_name': file_name,
+            'file_data': file_data,
+            'uploaded_by': user_email,
+            'uploaded_at': datetime.utcnow()
+        }
+
+        result = docs_collection.insert_one(doc)
+
+        # Audit
+        audit_collection.insert_one({
+            'action': 'ADD_DOC',
+            'table': 'Docs_Tables',
+            'user_id': user_email,
+            'details': f"Uploaded document '{description or file_name}' for {horse_name}",
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Document uploaded', '_id': str(result.inserted_id)}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/docs/<horse_name>/<doc_id>', methods=['DELETE'])
+def delete_horse_doc(horse_name, doc_id):
+    """Delete a document by its _id."""
+    try:
+        user_email = request.args.get('user_email', 'Unknown')
+        doc = docs_collection.find_one({'_id': ObjectId(doc_id), 'horse_name': horse_name})
+        if not doc:
+            return jsonify({'error': 'Document not found.'}), 404
+
+        docs_collection.delete_one({'_id': ObjectId(doc_id)})
+
+        audit_collection.insert_one({
+            'action': 'DELETE_DOC',
+            'table': 'Docs_Tables',
+            'user_id': user_email,
+            'details': f"Deleted document '{doc.get('description', '')}' for {horse_name}",
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Document deleted'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
