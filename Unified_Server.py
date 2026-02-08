@@ -22,6 +22,7 @@ try:
     # Collections
     user_logins = db['User_Logins']
     horse_collection = db['Horse_Tables']
+    audit_collection = db['Audits']
     # RESTORED: Daily Obs Collection
     daily_obs_collection = db['DailyObs_Tables']
     
@@ -145,6 +146,20 @@ def get_horses():
         return jsonify(horses), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ==========================================
+#      SECTION 2.5: AUDIT TRAIL
+# ==========================================
+
+@app.route('/api/audits', methods=['GET'])
+def get_audits():
+    try:
+        cursor = audit_collection.find().sort("timestamp", -1).limit(50)
+        audits = [format_doc(doc) for doc in cursor]
+        return jsonify(audits), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 # ==========================================
 #      SECTION 3: DAILY OBS / TO-DO (RESTORED!)

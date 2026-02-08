@@ -432,7 +432,82 @@
         const storedUsername = localStorage.getItem('user_name') || 'Volunteer';
         userFullName.textContent = storedUsername;
         loadDailyObs();
+        loadAuditTrail();
       });
+
+      // --- AUDIT TRAIL LOGIC ---
+      async function loadAuditTrail() {
+        try {
+          const res = await fetch(`${API_URL}/api/audits`);
+          const audits = await res.json();
+
+          const container = document.getElementById('auditTrailBody');
+          container.innerHTML = '';
+
+          if (!audits.length) {
+            container.innerHTML = '<p style="text-align:center;color:#95a5a6;padding:1rem;">No audit entries yet.</p>';
+            return;
+          }
+
+          audits.forEach(audit => {
+            // Pick icon based on action type
+            let iconClass = 'bi bi-journal-text';
+            let iconBg = 'background:#e3f2fd; color:#1565c0;';
+            const action = (audit.action || '').toUpperCase();
+
+            if (action.includes('LOGIN')) {
+              iconClass = 'bi bi-box-arrow-in-right';
+              iconBg = 'background:#e8f5e9; color:#388e3c;';
+            } else if (action.includes('REGISTER') || action.includes('CREATE')) {
+              iconClass = 'bi bi-person-plus-fill';
+              iconBg = 'background:#f3e5f5; color:#7b1fa2;';
+            } else if (action.includes('UPDATE') || action.includes('EDIT')) {
+              iconClass = 'bi bi-pencil-square';
+              iconBg = 'background:#fff3e0; color:#e65100;';
+            } else if (action.includes('DELETE')) {
+              iconClass = 'bi bi-trash-fill';
+              iconBg = 'background:#ffebee; color:#c62828;';
+            }
+
+            // Format timestamp
+            let timeStr = '';
+            if (audit.timestamp) {
+              const d = new Date(audit.timestamp);
+              timeStr = d.toLocaleDateString('en-US', { month:'short', day:'numeric' }) + ' ' +
+                        d.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+            }
+
+            // Build details string
+            let detailStr = audit.action || 'Unknown action';
+            if (audit.details) {
+              if (typeof audit.details === 'string') {
+                detailStr += ' — ' + audit.details;
+              } else if (audit.details.email) {
+                detailStr += ' — ' + audit.details.email;
+              } else if (audit.details.horse_name) {
+                detailStr += ' — ' + audit.details.horse_name;
+              }
+            }
+
+            const html = `
+            <div class="item-row">
+              <div class="item-icon" style="${iconBg}"><i class="${iconClass}"></i></div>
+              <div class="item-text">
+                <div class="title">${detailStr}</div>
+                <div class="meta">
+                  ${audit.table ? 'Table: ' + audit.table + ' • ' : ''}${timeStr}
+                  ${audit.user_id ? ' • User: ' + audit.user_id : ''}
+                </div>
+              </div>
+            </div>`;
+            container.innerHTML += html;
+          });
+        } catch (e) {
+          console.error("Error loading audit trail:", e);
+          document.getElementById('auditTrailBody').innerHTML =
+            '<p style="text-align:center;color:#e74c3c;padding:1rem;">Could not load audit trail.</p>';
+        }
+      }
 
       // --- RESTORED: DAILY OBS LOGIC ---
 
