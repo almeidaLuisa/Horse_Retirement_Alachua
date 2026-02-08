@@ -372,7 +372,7 @@
             <h3>View All Horses</h3>
             <p>Browse profiles, medical records &amp; field assignments</p>
           </div>
-          <span class="horse-count-badge" id="horseCount">170</span>
+          <span class="horse-count-badge" id="horseCount">...</span>
         </a>
       </div>
 
@@ -384,7 +384,7 @@
           <div class="row g-3 text-center">
             <div class="col-4">
               <div style="background:var(--green-light);border-radius:10px;padding:1rem 0.5rem;">
-                <div style="font-size:1.6rem;font-weight:800;color:var(--green-dark);">170</div>
+                <div id="totalHorseStat" style="font-size:1.6rem;font-weight:800;color:var(--green-dark);">...</div>
                 <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Total Horses</div>
               </div>
             </div>
@@ -528,7 +528,23 @@
         userFullName.textContent = storedUsername;
         loadDailyObs();
         loadAuditTrail();
+        loadHorseCount();
       });
+
+      // --- HORSE COUNT ---
+      async function loadHorseCount() {
+        try {
+          const res = await fetch('/horses');
+          const horses = await res.json();
+          const count = horses.length;
+          document.getElementById('horseCount').textContent = count;
+          document.getElementById('totalHorseStat').textContent = count;
+        } catch (e) {
+          console.error('Failed to load horse count:', e);
+          document.getElementById('horseCount').textContent = '?';
+          document.getElementById('totalHorseStat').textContent = '?';
+        }
+      }
 
       // --- AUDIT TRAIL LOGIC ---
       async function loadAuditTrail() {
