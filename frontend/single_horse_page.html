@@ -370,22 +370,36 @@
               return dbName === horseName.trim().toLowerCase();
             });
             if (horse) {
-              // Populate notes
-              const notes = horse.Notes || horse.general_notes || '';
-              document.getElementById('horseNotes').textContent = notes || 'No notes available.';
+              // Log all available keys so we can see what MongoDB returns
+              console.log('Horse data from MongoDB:', horse);
+              console.log('Available keys:', Object.keys(horse));
 
-              // Populate detail fields
-              document.getElementById('detailBreed').value = horse.Breed || horse.breed || '—';
-              document.getElementById('detailGender').value = horse.Gender || horse.gender || '—';
-              document.getElementById('detailAge').value = horse['Age (in 2026)'] || horse.Age || horse.age || '—';
-              document.getElementById('detailFieldHome').value = horse['Field Home'] || horse.pasture || '—';
-              document.getElementById('detailMedical').value = horse['Medical Conditions'] || '—';
-              document.getElementById('detailArrival').value = horse['RHH Arrival'] || '—';
-              document.getElementById('detailFOD').value = horse['Field of Dreams'] || '—';
-              document.getElementById('detailFarrier').value = horse['Last Farrier Date'] || '—';
-              document.getElementById('detailFarrierNotes').value = horse['Farrier notes'] || '—';
-              document.getElementById('detailTreatment').value = horse['Treatment Description'] || '—';
-              document.getElementById('detailTreatmentDate').value = horse['Treatment Date'] || '—';
+              // Helper: try multiple possible field names
+              function getField(...keys) {
+                for (const key of keys) {
+                  if (horse[key] !== undefined && horse[key] !== null && horse[key] !== '') {
+                    return horse[key];
+                  }
+                }
+                return '—';
+              }
+
+              // Populate notes
+              const notes = getField('Notes', 'notes', 'general_notes');
+              document.getElementById('horseNotes').textContent = (notes && notes !== '—') ? notes : 'No notes available.';
+
+              // Populate detail fields from MongoDB (trying multiple possible key names)
+              document.getElementById('detailBreed').value = getField('Breed', 'breed');
+              document.getElementById('detailGender').value = getField('Gender', 'gender', 'Sex', 'sex');
+              document.getElementById('detailAge').value = getField('Age (in 2026)', 'Age', 'age');
+              document.getElementById('detailFieldHome').value = getField('Field Home', 'field_home', 'pasture', 'Pasture', 'location');
+              document.getElementById('detailMedical').value = getField('Medical Conditions', 'medical_conditions', 'Medical', 'medical');
+              document.getElementById('detailArrival').value = getField('RHH Arrival', 'rhh_arrival', 'arrival', 'Arrival');
+              document.getElementById('detailFOD').value = getField('Field of Dreams', 'field_of_dreams');
+              document.getElementById('detailFarrier').value = getField('Last Farrier Date', 'last_farrier_date', 'Farrier Date');
+              document.getElementById('detailFarrierNotes').value = getField('Farrier notes', 'farrier_notes', 'Farrier Notes');
+              document.getElementById('detailTreatment').value = getField('Treatment Description', 'treatment_description', 'Treatment');
+              document.getElementById('detailTreatmentDate').value = getField('Treatment Date', 'treatment_date');
             } else {
               document.getElementById('horseNotes').textContent = 'Horse not found in database.';
             }
