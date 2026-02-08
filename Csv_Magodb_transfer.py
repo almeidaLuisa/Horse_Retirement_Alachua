@@ -60,17 +60,74 @@ def clean_string(value):
     return cleaned if cleaned else None
 
 def calculate_birth_year(age_str):
-    """Calculate birth year from age in 2026."""
+    """Calculate birth year from pure numeric age. If not pure number, return None."""
     if not age_str:
         return None
+    age_str = str(age_str).strip()
     try:
-        digits = ''.join(ch for ch in str(age_str) if ch.isdigit())
-        if digits:
-            age = int(digits)
-            return 2026 - age
-    except Exception:
-        pass
-    return None
+        # Only convert if it's a pure number
+        age = int(age_str)
+        return 2026 - age
+    except ValueError:
+        # If not pure number (e.g., "29+"), return None
+        return None
+
+def parse_medical_conditions(med_conditions_str):
+    """
+    Parse medical conditions string and return dict of condition flags.
+    Checks for condition keywords case-insensitively.
+    Default all to False, set True if found in text.
+    """
+    conditions = {
+        "heart_murmur": False,
+        "cushings_positive": False,
+        "heaves": False,
+        "anhidrosis": False,
+        "shivers": False,
+        "bites": False,
+        "kicks": False,
+        "difficult_to_catch": False,
+        "problem_with_needles": False,
+        "problem_with_farrier": False,
+        "sedation_for_farrier": False,
+        "requires_extra_feed": False,
+        "requires_extra_mash": False,
+    }
+    
+    if not med_conditions_str:
+        return conditions
+    
+    med_text = str(med_conditions_str).lower()
+    
+    # Check each condition keyword
+    if "heart murmur" in med_text:
+        conditions["heart_murmur"] = True
+    if "cushing" in med_text:  # Catches "Cushing's", "Cushings", etc.
+        conditions["cushings_positive"] = True
+    if "heaves" in med_text:
+        conditions["heaves"] = True
+    if "anhidrosis" in med_text:
+        conditions["anhidrosis"] = True
+    if "shivers" in med_text:
+        conditions["shivers"] = True
+    if "bites" in med_text:
+        conditions["bites"] = True
+    if "kicks" in med_text:
+        conditions["kicks"] = True
+    if "difficult to catch" in med_text or "difficult_to_catch" in med_text:
+        conditions["difficult_to_catch"] = True
+    if "problem" in med_text and "needle" in med_text:
+        conditions["problem_with_needles"] = True
+    if "problem" in med_text and "farrier" in med_text:
+        conditions["problem_with_farrier"] = True
+    if "sedation" in med_text:
+        conditions["sedation_for_farrier"] = True
+    if "extra feed" in med_text or "extra-feed" in med_text:
+        conditions["requires_extra_feed"] = True
+    if "extra mash" in med_text or "extra-mash" in med_text:
+        conditions["requires_extra_mash"] = True
+    
+    return conditions
 
 documents = []
 
@@ -86,38 +143,50 @@ with open(csv_path, newline='', encoding='utf-8') as csvfile:
         norm = {k.strip(): (v.strip() if v is not None else '') for k, v in row.items()}
 
         # --- BUILD COMPREHENSIVE HORSE DOCUMENT ---
+        # Parse medical conditions to get all condition flags
+        med_conditions_parsed = parse_medical_conditions(norm.get('Medical Conditions'))
+        
+        # Handle age: convert pure numbers to birth year, set to None if non-numeric
+        age_str = clean_string(norm.get('Age (in 2026)'))
+        birth_year = calculate_birth_year(age_str) if age_str else None
+        
+        # Handle Field of Dreams: if there's a date, horse is deceased
+        field_of_dreams_date = parse_date(norm.get('Field of Dreams'))
+        is_deceased = field_of_dreams_date is not None
+        
         horse_doc = {
             # Section 1: Basic Information
             "name": clean_string(norm.get('Name')),
-            "birth_year": calculate_birth_year(norm.get('Age (in 2026)')),
+            "birth_year": birth_year,
             "picture_url": clean_string(norm.get('Picture')),
             "biography_url": clean_string(norm.get('Biography')),
-            "arrival_date": parse_date(norm.get('Arrival Date')),
+            "arrival_date": parse_date(norm.get('RHH Arrival')),
             "breed": clean_string(norm.get('Breed')),
             "gender": clean_string(norm.get('Gender')),
+            "pasture": clean_string(norm.get('Field Home')),
             
-            # Section 1: Eye Conditions
+            # Eye Conditions (if in separate columns, add them, otherwise leave as None)
             "left_eye": clean_string(norm.get('Left Eye')),
             "right_eye": clean_string(norm.get('Right Eye')),
             
-            # Section 2: Medical Conditions (Red/Medical attributes)
-            "heart_murmur": parse_boolean(norm.get('Heart Murmur')),
-            "cushings_positive": parse_boolean(norm.get('Cushings Positive')),
-            "heaves": parse_boolean(norm.get('Heaves')),
-            "anhidrosis": parse_boolean(norm.get('Anhidrosis')),
-            "shivers": parse_boolean(norm.get('Shivers')),
+            # Section 2: Medical Conditions (parsed from Medical Conditions field)
+            "heart_murmur": med_conditions_parsed["heart_murmur"],
+            "cushings_positive": med_conditions_parsed["cushings_positive"],
+            "heaves": med_conditions_parsed["heaves"],
+            "anhidrosis": med_conditions_parsed["anhidrosis"],
+            "shivers": med_conditions_parsed["shivers"],
             
-            # Section 2: Behavior Attributes (Light Blue)
-            "bites": parse_boolean(norm.get('Bites')),
-            "kicks": parse_boolean(norm.get('Kicks')),
-            "difficult_to_catch": parse_boolean(norm.get('Difficult to catch')),
-            "problem_with_needles": parse_boolean(norm.get('Problem w/ needles')),
-            "problem_with_farrier": parse_boolean(norm.get('Problem w/ farrier')),
-            "sedation_for_farrier": parse_boolean(norm.get('Sedation for Farrier')),
+            # Section 2: Behavior Attributes
+            "bites": med_conditions_parsed["bites"],
+            "kicks": med_conditions_parsed["kicks"],
+            "difficult_to_catch": med_conditions_parsed["difficult_to_catch"],
+            "problem_with_needles": med_conditions_parsed["problem_with_needles"],
+            "problem_with_farrier": med_conditions_parsed["problem_with_farrier"],
+            "sedation_for_farrier": med_conditions_parsed["sedation_for_farrier"],
             
-            # Section 2: Feeding Attributes (Orange)
-            "requires_extra_feed": parse_boolean(norm.get('Requires extra feed')),
-            "requires_extra_mash": parse_boolean(norm.get('Requires extra mash')),
+            # Section 2: Feeding Attributes
+            "requires_extra_feed": med_conditions_parsed["requires_extra_feed"],
+            "requires_extra_mash": med_conditions_parsed["requires_extra_mash"],
             
             # Section 3: Care & Status
             "seen_by_vet": parse_boolean(norm.get('Seen by Vet')),
@@ -126,15 +195,17 @@ with open(csv_path, newline='', encoding='utf-8') as csvfile:
             "ex_race_horse": parse_boolean(norm.get('ExRaceHorse')),
             
             # Section 3: Deceased Status
-            "is_deceased": parse_boolean(norm.get('Deceased')),
-            "date_of_death": parse_date(norm.get('Date of death')),
+            "is_deceased": is_deceased,
+            "date_of_death": field_of_dreams_date,  # From Field of Dreams column
             
             # Section 3: Care Schedule & Notes
             "grooming_days": clean_string(norm.get('Grooming Day')),
-            "pasture": clean_string(norm.get('Pasture')),
+            "last_farrier_date": parse_date(norm.get('Last Farrier Date')),
+            "farrier_notes": clean_string(norm.get('Farrier notes')),
             "behavior_notes": clean_string(norm.get('Behavior Notes')),
             "regular_treatment": parse_boolean(norm.get('Regular Treatment')),
             "medical_notes": clean_string(norm.get('Medical Notes')),
+            "general_notes": clean_string(norm.get('Notes')),
             
             # Metadata
             "datetime_last_updated": datetime.utcnow(),
