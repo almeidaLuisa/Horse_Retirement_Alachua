@@ -223,7 +223,7 @@
             </div>
             <div class="horse-info">
                 <h2>Notes</h2>
-                <div class="editable" contenteditable="true">Click to add notes...</div>
+                <div class="editable" id="horseNotes" contenteditable="true">Loading notes...</div>
             </div>
         </div>
     </div>
@@ -281,6 +281,8 @@
     </div>
 
     <script>
+      const API_URL = "http://127.0.0.1:5000/horses";
+
       // Read horse name from URL and set the title + image
       const params = new URLSearchParams(window.location.search);
       const horseName = params.get('name');
@@ -292,6 +294,31 @@
         const img = document.getElementById('horseImage');
         img.src = 'images/' + horseName + '.jpg';
         img.alt = horseName;
+
+        // Fetch this horse's data from the API and populate Notes
+        fetch(API_URL)
+          .then(res => {
+            if (!res.ok) throw new Error('Server responded with ' + res.status);
+            return res.json();
+          })
+          .then(horses => {
+            // Find horse by name (case-insensitive, trimmed)
+            const horse = horses.find(h => {
+              const dbName = (h.Name || h.name || '').trim().toLowerCase();
+              return dbName === horseName.trim().toLowerCase();
+            });
+            if (horse) {
+              const notes = horse.Notes || horse.general_notes || '';
+              const notesEl = document.getElementById('horseNotes');
+              notesEl.textContent = notes || 'No notes available.';
+            } else {
+              document.getElementById('horseNotes').textContent = 'Horse not found in database.';
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching horse data:', err);
+            document.getElementById('horseNotes').textContent = 'Could not load notes. Is the Flask server running?';
+          });
       }
     </script>
 </body>
