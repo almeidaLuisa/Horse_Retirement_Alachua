@@ -1,10 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from User_Manager import UserManager
 from functools import wraps
 import os
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
 
 # Initialize User Manager
@@ -191,6 +191,18 @@ def health_check():
         'status': 'healthy',
         'message': 'Server is running'
     }), 200
+
+# ========== FRONTEND ROUTES ==========
+
+@app.route('/')
+def index():
+    """Serve home page"""
+    return send_from_directory('frontend', 'home_page.html')
+
+@app.route('/<path:filename>')
+def serve_frontend(filename):
+    """Serve frontend files"""
+    return send_from_directory('frontend', filename)
 
 # ========== ERROR HANDLERS ==========
 
