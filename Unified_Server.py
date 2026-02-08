@@ -13,6 +13,7 @@ from email.mime.multipart import MIMEMultipart
 
 # --- CONFIGURATION ---
 app = Flask(__name__, static_folder='frontend', static_url_path='')
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32 MB max upload
 # Allow CORS for all domains
 CORS(app)
 
@@ -375,23 +376,31 @@ def get_horses():
 def add_horse():
     try:
         data = request.json
+        print(f"📥 POST /horses received: {list(data.keys()) if data else 'NO DATA'}")
+        if not data:
+            return jsonify({'error': 'No JSON data received'}), 400
         if not data.get('Name') and not data.get('name'):
             return jsonify({'error': 'Horse name is required'}), 400
 
-        result = horse_collection.insert_one(data)
+        # Extract user_email before inserting (not horse data)
+        user_email = data.pop('user_email', 'Unknown')
         horse_name = data.get('Name') or data.get('name') or 'Unknown'
+
+        result = horse_collection.insert_one(data)
+        print(f"✅ Horse '{horse_name}' inserted with _id: {result.inserted_id}")
 
         # Log to audit trail
         audit_collection.insert_one({
             'action': 'ADD_HORSE',
             'table': 'Horse_Tables',
-            'user_id': data.get('user_email', 'Unknown'),
+            'user_id': user_email,
             'details': {'horse_name': horse_name},
             'timestamp': datetime.utcnow()
         })
 
         return jsonify({'message': 'Horse added', 'id': str(result.inserted_id)}), 201
     except Exception as e:
+        print(f"❌ Error adding horse: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/horses/<id>', methods=['PUT'])

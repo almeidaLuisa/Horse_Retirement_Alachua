@@ -258,6 +258,10 @@
           return;
         }
 
+        // Get photo as base64 if one was selected
+        const photoPreview = document.getElementById('photoPreview');
+        const photoData = (photoPreview.style.display !== 'none' && photoPreview.src) ? photoPreview.src : '';
+
         const horseData = {
           Name: name,
           Breed: document.getElementById('breed').value.trim(),
@@ -265,27 +269,31 @@
           'Field Home': document.getElementById('pasture').value.trim(),
           'Date of Birth': document.getElementById('dob').value,
           Notes: document.getElementById('notes').value.trim(),
+          photo: photoData,
           user_email: localStorage.getItem('user_email') || 'Unknown'
         };
 
         try {
+          console.log('Sending horse data to server:', Object.keys(horseData));
           const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(horseData)
           });
 
+          const result = await response.json();
+          console.log('Server response:', response.status, result);
+
           if (response.ok) {
-            showStatus('Horse added successfully!', 'green');
+            showStatus('Horse added successfully! (ID: ' + result.id + ')', 'green');
             setTimeout(() => {
               window.location.href = 'horses_database_page.html';
             }, 1200);
           } else {
-            const err = await response.json();
-            showStatus('Error: ' + (err.error || 'Could not save.'), 'red');
+            showStatus('Error: ' + (result.error || 'Could not save.'), 'red');
           }
         } catch (error) {
-          console.error(error);
+          console.error('Save error:', error);
           showStatus('Server error. Is the Flask server running?', 'red');
         }
       }

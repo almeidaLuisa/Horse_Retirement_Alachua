@@ -124,8 +124,14 @@
                 return;
             }
 
+            const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
+            const isAdmin = (userRole === 'admin');
+
             horses.forEach(horse => {
                 const horseName = horse.Name || horse.name || '?';
+                const deleteBtn = isAdmin
+                  ? `<button onclick="event.stopPropagation(); deleteHorse('${horse._id}')" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:700;font-size:0.8rem;" title="Delete horse (Admin only)"><i class="bi bi-trash"></i></button>`
+                  : '';
                 const row = `
                     <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
                         <td><strong>${horseName}</strong></td>
@@ -133,17 +139,21 @@
                         <td>${horse.Gender || horse.gender || '-'}</td>
                         <td>${horse['Field Home'] || horse.pasture || '-'}</td>
                         <td>${horse.Notes || horse.general_notes || '-'}</td>
-                        <td class="action-buttons"></td>
+                        <td class="action-buttons">${deleteBtn}</td>
                     </tr>
                 `;
                 tableBody.innerHTML += row;
             });
     }
 
-    // 3. DELETE HORSE
+    // 3. DELETE HORSE (Admin only)
     async function deleteHorse(id) {
-        if (!checkEditor()) return;
-        if (!confirm("Are you sure you want to delete this horse?")) return;
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (role !== 'admin') {
+            showStatus("🔒 Only admins can delete horses.", "#c62828");
+            return;
+        }
+        if (!confirm("Are you sure you want to permanently delete this horse? This cannot be undone.")) return;
 
         try {
             const userEmail = localStorage.getItem('user_email') || 'Unknown';

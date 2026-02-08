@@ -376,6 +376,7 @@
           <button class="btn-edit" id="btnEdit" onclick="enableEditing()"><i class="bi bi-pencil"></i> Edit</button>
           <button class="btn-save" id="btnSave" onclick="saveChanges()" style="display:none;"><i class="bi bi-check-lg"></i> Save Changes</button>
           <button class="btn-cancel" id="btnCancel" onclick="cancelEditing()" style="display:none;"><i class="bi bi-x-lg"></i> Cancel</button>
+          <button class="btn-edit" id="btnDelete" onclick="deleteHorse()" style="background:#e74c3c;display:none;"><i class="bi bi-trash"></i> Delete Horse</button>
         </div>
     </div>
     <div class="save-toast" id="saveToast"></div>
@@ -474,13 +475,15 @@
         }
 
         const img = document.getElementById('horseImage');
-        img.src = 'images/' + getImageName(horseName) + '.jpg';
         img.alt = horseName;
-        // Show placeholder on error (no matching image file)
-        img.onerror = function() {
-          this.style.display = 'none';
-          this.parentElement.innerHTML = '<div style="text-align:center;color:#546e7a;font-size:0.85rem;padding:1rem;"><i class="bi bi-camera-fill" style="font-size:3rem;color:#81c784;display:block;margin-bottom:0.5rem;"></i>No photo available</div>';
-        };
+        img.style.display = 'none'; // hide until we have a source
+
+        function showPlaceholder() {
+          const container = document.querySelector('.horse-photo');
+          if (container) {
+            container.innerHTML = '<div style="text-align:center;color:#546e7a;font-size:0.85rem;padding:1rem;"><i class="bi bi-camera-fill" style="font-size:3rem;color:#81c784;display:block;margin-bottom:0.5rem;"></i>No photo available</div>';
+          }
+        }
 
         // Fetch this horse's data from the API and populate Notes
         fetch(API_URL)
@@ -497,6 +500,20 @@
             if (horse) {
               console.log('Horse data from MongoDB:', horse);
               currentHorseId = horse._id;  // store for PUT
+
+              // Photo priority: 1) DB base64 photo, 2) file-based image, 3) placeholder
+              const imgEl = document.getElementById('horseImage');
+              if (horse.photo) {
+                // Use the base64 photo stored in MongoDB
+                imgEl.onload = function() { this.style.display = 'block'; };
+                imgEl.onerror = function() { showPlaceholder(); };
+                imgEl.src = horse.photo;
+              } else {
+                // Try file-based image from images/ folder
+                imgEl.onload = function() { this.style.display = 'block'; };
+                imgEl.onerror = function() { showPlaceholder(); };
+                imgEl.src = 'images/' + getImageName(horseName) + '.jpg';
+              }
 
               // Helper: format date strings nicely
               function fmtDate(val) {
@@ -638,6 +655,43 @@
         toast.classList.add('show');
         setTimeout(() => toast.classList.remove('show'), 3000);
       }
+
+      // Delete horse (admin only)
+      async function deleteHorse() {
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (role !== 'admin') {
+          showToast("🔒 Only admins can delete horses.", '#c62828');
+          return;
+        }
+        if (!currentHorseId) {
+          showToast('Cannot delete — horse ID not found.', '#c62828');
+          return;
+        }
+        if (!confirm('Are you sure you want to permanently delete ' + horseName + '? This cannot be undone.')) return;
+
+        try {
+          const userEmail = localStorage.getItem('user_email') || 'Unknown';
+          const res = await fetch(`${API_URL}/${currentHorseId}?user_email=${encodeURIComponent(userEmail)}`, { method: 'DELETE' });
+          if (res.ok) {
+            showToast('Horse deleted successfully.', '#388e3c');
+            setTimeout(() => { window.location.href = 'horses_database_page.html'; }, 1500);
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not delete.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Delete error:', e);
+          showToast('Server error.', '#c62828');
+        }
+      }
+
+      // Show delete button for admins on page load
+      (function() {
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (role === 'admin') {
+          document.getElementById('btnDelete').style.display = 'inline-flex';
+        }
+      })();
 
       // Permission check
       function isAdmin() {
