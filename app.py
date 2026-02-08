@@ -1,290 +1,321 @@
-"""
-Retirement Home for Horses Management System
-Flask Backend - Authentication Module
-Simple authentication with admin, editor, and viewer roles
-"""
-
-from flask import Flask, jsonify, request
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
-from bson.objectid import ObjectId
-from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
-from datetime import datetime, timedelta
+from User_Manager import UserManager
 from functools import wraps
-import re
+import os
 
-# --- CONFIGURATION ---
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend', static_url_path='')
 CORS(app)
-app.config['SECRET_KEY'] = 'your_secret_key_change_this_in_production'
-app.config['JWT_EXPIRATION_HOURS'] = 24
 
-# Database Connection - Using MongoDB
-URI = "mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary"
-DB_NAME = "Data"
+# Initialize User Manager
+user_manager = UserManager()
 
-# Permission levels
-PERMISSION_LEVELS = {
-    'admin': 3,      # Administrator (Paul)
-    'editor': 2,     # Editor (Ann, Amy, Nicole)
-    'viewer': 1      # Viewer (All other volunteers)
-}
-
-# MongoDB Connection
-try:
-    client = MongoClient(URI, server_api=ServerApi('1'))
-    db = client[DB_NAME]
-    
-    # Collections
-    user_tables_collection = db['User_Tables']  # User info (name, email, role, etc - no password)
-    user_logins_collection = db['User_Logins']  # Login history + password credentials
-    audits_collection = db['Audits']  # Audit trail
-    
-    # Create indexes
-    user_logins_collection.create_index('user_id')
-    user_logins_collection.create_index('timestamp')
-    audits_collection.create_index('timestamp')
-    audits_collection.create_index('user_id')
-    
-    print(f"✅ Connected to MongoDB Database: {DB_NAME}")
-except Exception as e:
-    print(f"❌ Database Connection Failed: {e}")
-    raise
-
-# --- HELPER FUNCTIONS ---
-
-def log_audit(user_id, action, table_name, details=None):
-    """Log changes to audit trail"""
-    try:
-        audit_doc = {
-            'timestamp': datetime.utcnow(),
-            'user_id': str(user_id) if user_id else None,
-            'action': action,
-            'table': table_name,
-            'details': details
-        }
-        audits_collection.insert_one(audit_doc)
-    except Exception as e:
-        print(f"⚠️ Audit log error: {e}")
-
-# --- HELPER FUNCTIONS ---
-
-def validate_email(email):
-    """Validate email format"""
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email) is not None
-
-def validate_password(password):
-    """Validate password (minimum 6 characters)"""
-    return len(password) >= 6
-
-def verify_token(token):
-    """Verify JWT token and return user data"""
-    try:
-        data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        return data
-    except jwt.ExpiredSignatureError:
-        return None
-    except jwt.InvalidTokenError:
-        return None
-
-# --- DECORATORS ---
-
+# Middleware to verify token
 def token_required(f):
-    """Decorator to check if user has valid token"""
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
+        token = None
+        
+        # Check for token in headers
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            try:
+                token = auth_header.split(" ")[1]
+            except IndexError:
+                return jsonify({'error': 'Invalid token format'}), 401
+        
         if not token:
             return jsonify({'error': 'Token is missing'}), 401
         
-        try:
-            token = token.split(' ')[1] if ' ' in token else token
-            user_data = verify_token(token)
-            if not user_data:
-                return jsonify({'error': 'Invalid or expired token'}), 401
-            request.user_id = user_data['user_id']
-            request.user_role = user_data['role']
-        except:
-            return jsonify({'error': 'Invalid token'}), 401
+        # Verify token
+        success, payload, message = user_manager.verify_token(token)
+        if not success:
+            return jsonify({'error': message}), 401
         
+        # Pass user data to route
+        kwargs['current_user'] = payload
         return f(*args, **kwargs)
+    
     return decorated
 
-def permission_required(required_level):
-    """Decorator to check user permission level"""
-    def decorator(f):
-        @wraps(f)
-        @token_required
-        def decorated(*args, **kwargs):
-            user_role = request.user_role
-            if PERMISSION_LEVELS.get(user_role, 0) < required_level:
-                return jsonify({'error': 'Insufficient permissions'}), 403
-            return f(*args, **kwargs)
-        return decorated
-    return decorator
-
-# --- AUTHENTICATION ROUTES ---
+# ========== AUTHENTICATION ROUTES ==========
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     """Register a new user"""
     try:
-        data = request.json
-        email = data.get('email')
-        password = data.get('password')
-        name = data.get('name')
-        phone = data.get('phone')
+        data = request.get_json()
         
-        # Validation
-        if not email or not password or not name:
-            return jsonify({'error': 'Email, password, and name are required'}), 400
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email and password are required'}), 400
         
-        if not validate_email(email):
-            return jsonify({'error': 'Invalid email format'}), 400
+        email = data['email'].strip()
+        password = data['password']
         
-        if not validate_password(password):
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+        # Register user
+        success, message, user_id = user_manager.register_user(email, password)
         
-        # Check if user exists
-        if user_tables_collection.find_one({'email': email}):
-            return jsonify({'error': 'Email already registered'}), 409
+        if not success:
+            return jsonify({'error': message}), 400
         
-        # Generate user_id for new user
-        from bson.objectid import ObjectId
-        user_id = ObjectId()
-        
-        # 2. Create user info record in User_Tables (no password)
-        user_info_doc = {
-            '_id': user_id,
-            'email': email,
-            'name': name,
-            'phone': phone,
-            'role': 'viewer',  # Default role
-            'is_admin': False,
-            'can_edit': False,
-            'can_view': True,
-            'active': True,
-            'created_at': datetime.utcnow(),
-            'last_login': None
-        }
-        user_tables_collection.insert_one(user_info_doc)
-        
-        # 3. Store password credentials in User_Logins collection
-        login_doc = {
-            'user_id': user_id,
-            'email': email,
-            'password': generate_password_hash(password),
-            'timestamp': datetime.utcnow(),
-            'ip_address': 'REGISTRATION',
-            'action': 'REGISTER'
-        }
-        user_logins_collection.insert_one(login_doc)
-        
-        # 4. Log to audit trail
-        log_audit(user_id, 'REGISTER', 'User_Tables', {'email': email, 'name': name})
-        
-        return jsonify({'message': 'User registered successfully', 'user_id': str(user_id)}), 201
+        return jsonify({
+            'success': True,
+            'message': message,
+            'user_id': user_id
+        }), 201
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """Login user and return JWT token"""
     try:
-        data = request.json
-        email = data.get('email')
-        password = data.get('password')
+        data = request.get_json()
         
-        if not email or not password:
-            return jsonify({'error': 'Email and password required'}), 400
+        if not data or not data.get('email') or not data.get('password'):
+            return jsonify({'error': 'Email and password are required'}), 400
         
-        # Find user by email in User_Logins (password credentials)
-        login_cred = user_logins_collection.find_one({'email': email})
-        if not login_cred or not check_password_hash(login_cred['password'], password):
-            return jsonify({'error': 'Invalid email or password'}), 401
+        email = data['email'].strip()
+        password = data['password']
         
-        user_id = login_cred['user_id']
+        # Authenticate user
+        success, message, token, user_data = user_manager.login_user(email, password)
         
-        # Get user info from User_Tables
-        user_info = user_tables_collection.find_one({'_id': user_id})
-        if not user_info or not user_info.get('active'):
-            return jsonify({'error': 'User account is inactive'}), 403
-        
-        # 1. Log login event to User_Logins collection
-        login_record = {
-            'user_id': user_id,
-            'email': email,
-            'timestamp': datetime.utcnow(),
-            'ip_address': request.remote_addr,
-            'action': 'LOGIN'
-        }
-        user_logins_collection.insert_one(login_record)
-        
-        # 2. Update last_login in User_Tables
-        user_tables_collection.update_one(
-            {'_id': user_id},
-            {'$set': {'last_login': datetime.utcnow()}}
-        )
-        
-        # 3. Log to audit trail
-        log_audit(user_id, 'LOGIN', 'User_Logins', {'email': email})
-        
-        # Generate JWT token
-        token = jwt.encode({
-            'user_id': str(user_id),
-            'email': user_info['email'],
-            'role': user_info['role'],
-            'exp': datetime.utcnow() + timedelta(hours=app.config['JWT_EXPIRATION_HOURS'])
-        }, app.config['SECRET_KEY'], algorithm='HS256')
+        if not success:
+            return jsonify({'error': message}), 401
         
         return jsonify({
+            'success': True,
+            'message': message,
             'token': token,
-            'user': {
-                'id': str(user_id),
-                'email': user_info['email'],
-                'name': user_info['name'],
-                'role': user_info['role']
-            }
+            'user': user_data
         }), 200
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-# --- UTILITY ROUTES ---
+@app.route('/api/auth/logout', methods=['POST'])
+@token_required
+def logout(current_user):
+    """Logout user"""
+    # Token is removed client-side, but we can perform cleanup here if needed
+    return jsonify({
+        'success': True,
+        'message': 'Logged out successfully'
+    }), 200
+
+# ========== USER PROFILE ROUTES ==========
+
+@app.route('/api/user/profile', methods=['GET'])
+@token_required
+def get_profile(current_user):
+    """Get current user profile"""
+    try:
+        user = user_manager.get_user_by_id(current_user['user_id'])
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        return jsonify({
+            'success': True,
+            'user': user
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/user/profile', methods=['PUT'])
+@token_required
+def update_profile(current_user):
+    """Update user profile"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Update user profile (sensitive fields are protected in the manager)
+        success = user_manager.update_user_profile(current_user['user_id'], data)
+        
+        if not success:
+            return jsonify({'error': 'Failed to update profile'}), 400
+        
+        # Get updated user data
+        user = user_manager.get_user_by_id(current_user['user_id'])
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile updated successfully',
+            'user': user
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/user/change-password', methods=['POST'])
+@token_required
+def change_password(current_user):
+    """Change user password"""
+    try:
+        data = request.get_json()
+        
+        if not data or not data.get('old_password') or not data.get('new_password'):
+            return jsonify({'error': 'Old password and new password are required'}), 400
+        
+        old_password = data['old_password']
+        new_password = data['new_password']
+        
+        success, message = user_manager.change_password(
+            current_user['user_id'],
+            old_password,
+            new_password
+        )
+        
+        if not success:
+            return jsonify({'error': message}), 400
+        
+        return jsonify({
+            'success': True,
+            'message': message
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+# ========== HORSE MANAGEMENT ROUTES ==========
+
+@app.route('/api/user/horses', methods=['GET'])
+@token_required
+def get_user_horses(current_user):
+    """Get all horses managed by the current user"""
+    try:
+        horses, message = user_manager.get_user_horses(current_user['user_id'])
+        
+        if horses is None:
+            return jsonify({'error': message}), 404
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'horses': horses,
+            'count': len(horses) if isinstance(horses, list) else 0
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/user/horses/<horse_id>', methods=['POST'])
+@token_required
+def assign_horse(current_user, horse_id):
+    """Assign a horse to the current user"""
+    try:
+        success, message = user_manager.assign_horse_to_user(current_user['user_id'], horse_id)
+        
+        if not success:
+            return jsonify({'error': message}), 400
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'horse_id': horse_id
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/user/horses/<horse_id>', methods=['DELETE'])
+@token_required
+def unassign_horse(current_user, horse_id):
+    """Remove a horse from the current user's management"""
+    try:
+        success, message = user_manager.unassign_horse_from_user(current_user['user_id'], horse_id)
+        
+        if not success:
+            return jsonify({'error': message}), 400
+        
+        return jsonify({
+            'success': True,
+            'message': message,
+            'horse_id': horse_id
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+# ========== DATABASE STATISTICS ==========
+
+@app.route('/api/admin/stats', methods=['GET'])
+@token_required
+def get_stats(current_user):
+    """Get database statistics (admin only)"""
+    try:
+        # Check if user is admin
+        if current_user.get('role') != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        stats = user_manager.get_database_stats()
+        
+        return jsonify({
+            'success': True,
+            'stats': stats
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/api/admin/audit-logs', methods=['GET'])
+@token_required
+def get_audit_logs(current_user):
+    """Get audit logs (admin only)"""
+    try:
+        # Check if user is admin
+        if current_user.get('role') != 'admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        limit = request.args.get('limit', 100, type=int)
+        logs = user_manager.get_audit_logs(limit=limit)
+        
+        return jsonify({
+            'success': True,
+            'logs': logs,
+            'count': len(logs)
+        }), 200
+    
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}), 200
-
-@app.route('/', methods=['GET'])
-def home():
-    """Home endpoint"""
     return jsonify({
-        'status': 'online',
-        'message': 'Retirement Home for Horses Backend - Authentication Module',
-        'version': '1.0.0'
+        'status': 'healthy',
+        'message': 'Server is running'
     }), 200
 
-# --- ERROR HANDLERS ---
+# ========== FRONTEND ROUTES ==========
+
+@app.route('/')
+def index():
+    """Serve home page"""
+    return send_from_directory('frontend', 'home_page.html')
+
+@app.route('/<path:filename>')
+def serve_frontend(filename):
+    """Serve frontend files"""
+    return send_from_directory('frontend', filename)
+
+# ========== ERROR HANDLERS ==========
 
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404
 
-@app.errorhandler(405)
-def method_not_allowed(error):
-    return jsonify({'error': 'Method not allowed'}), 405
-
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
-# --- RUN SERVER ---
 if __name__ == '__main__':
-    print("🚀 Starting Retirement Home for Horses Backend")
-    print("📚 Authentication module running on http://localhost:5000")
-    print("📋 Roles: admin (Paul), editor (Ann, Amy, Nicole), viewer (all others)")
+    # Use debug mode for development
     app.run(debug=True, host='0.0.0.0', port=5000)

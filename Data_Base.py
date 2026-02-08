@@ -8,8 +8,9 @@ import math
 
 # --- CONFIGURATION ---
 # 1. DATABASE CONNECTION
+MONGODB_API_KEY = "8ab265da-7d60-41e3-a416-ce58a4b1eb93"
 URI = "mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary"
-DB_NAME = "Alejandro's_Labor_Camp"  # The specific database we are creating
+DB_NAME = "Data"  # The specific database we are using
 
 # 2. FILE CONFIGURATION
 CSV_FILE = 'Horse_Table.csv'

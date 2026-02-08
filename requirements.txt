@@ -4,6 +4,6 @@ pymongo
 dnspython
 certifi
 pyjwt
-werkzeug
-python-dotenv
 pandas
+werkzeug
+requests

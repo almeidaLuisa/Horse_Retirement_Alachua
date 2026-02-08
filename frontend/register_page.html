@@ -51,6 +51,7 @@
 				const form = document.getElementById('registerForm');
 				const errorEl = document.getElementById('registerError');
 				const successEl = document.getElementById('registerSuccess');
+				const submitBtn = form.querySelector('button[type="submit"]');
 
 				function setError(msg) {
 					if (!msg) {
@@ -72,13 +73,31 @@
 					successEl.textContent = msg;
 				}
 
+				function setLoading(isLoading) {
+					submitBtn.disabled = isLoading;
+					submitBtn.textContent = isLoading ? 'Signing up...' : 'Sign Up';
+				}
+
 				form.addEventListener('submit', async (e) => {
 					e.preventDefault();
 					setError('');
 					setSuccess('');
+					setLoading(true);
 
 					const email = document.getElementById('regEmail').value.trim();
 					const password = document.getElementById('regPassword').value;
+
+					if (!email || !password) {
+						setError('Email and password are required.');
+						setLoading(false);
+						return;
+					}
+
+					if (password.length < 6) {
+						setError('Password must be at least 6 characters long.');
+						setLoading(false);
+						return;
+					}
 
 					try {
 						const res = await fetch('/api/auth/register', {
@@ -90,13 +109,20 @@
 						const data = await res.json().catch(() => ({}));
 						if (!res.ok) {
 							setError(data?.error || 'Registration failed.');
+							setLoading(false);
 							return;
 						}
 
-						setSuccess('Account created! Go back and log in.');
+						setSuccess('Account created! Redirecting to login...');
 						form.reset();
-					} catch {
+						
+						// Redirect to login after 2 seconds
+						setTimeout(() => {
+							window.location.href = 'login_page.html';
+						}, 2000);
+					} catch (error) {
 						setError('Network error. Is the server running?');
+						setLoading(false);
 					}
 				});
 			})();
