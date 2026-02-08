@@ -114,9 +114,7 @@
       .filter-pill:hover, .filter-pill.active {
         background: rgba(255,255,255,0.45);
       }
-      .filter-pill:visited {
-        color: #fff;
-      }
+      .filter-pill:visited { color: #fff; }
 
       /* ── Dashboard grid ── */
       .dash-grid {
@@ -314,65 +312,24 @@
     <!-- ── Dashboard Cards ── -->
     <div class="dash-grid">
 
-      <!-- ▸ Daily Observations / To-Do -->
-
+      <!-- ▸ Daily Observations / To-Do (NOW PULLS FROM MONGODB) -->
       <div class="dash-card" id="daily-obs-section">
         <div class="dash-card-header">
           <h2><i class="bi bi-clipboard-pulse"></i> Daily Observations &amp; To-Do</h2>
-          <span class="badge-count">5 items</span>
+          <span class="badge-count" id="dailyObsBadge">0 items</span>
         </div>
+
         <div class="dash-card-body scroll-body">
+          <!-- JS renders MongoDB items here -->
+          <div id="dailyObsList"></div>
 
-          <div class="item-row">
-            <div class="item-icon icon-alert"><i class="bi bi-exclamation-triangle-fill"></i></div>
-            <div class="item-text">
-              <div class="title">Alf — weight check</div>
-              <div class="meta">Seized due to neglect; monitor weight gain weekly</div>
-              <span class="tag tag-pending">Pending</span>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-todo"><i class="bi bi-clock-fill"></i></div>
-            <div class="item-text">
-              <div class="title">Acero — hind leg observation</div>
-              <div class="meta">Suspensory ligament issue; check for dragging</div>
-              <span class="tag tag-pending">Pending</span>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-done"><i class="bi bi-check-circle-fill"></i></div>
-            <div class="item-text">
-              <div class="title">Abe — Equi-spot treatment</div>
-              <div class="meta">Applied 6/9/2025 — next treatment due soon</div>
-              <span class="tag tag-complete">Complete</span>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-todo"><i class="bi bi-clock-fill"></i></div>
-            <div class="item-text">
-              <div class="title">Bandit — Cushings blood draw</div>
-              <div class="meta">Missed in 09/2025 — afraid of needles, needs IM sedative</div>
-              <span class="tag tag-pending">Pending</span>
-            </div>
-          </div>
-
-          <div class="item-row">
-            <div class="item-icon icon-done"><i class="bi bi-check-circle-fill"></i></div>
-            <div class="item-text">
-              <div class="title">Abby — daily feeding complete</div>
-              <div class="meta">Buttercup's Meadow — morning round done</div>
-              <span class="tag tag-complete">Complete</span>
-            </div>
-          </div>
-
-          <button class="add-btn"><i class="bi bi-plus-circle"></i> Add observation</button>
+          <button class="add-btn" id="btnAddObs" type="button">
+            <i class="bi bi-plus-circle"></i> Add observation
+          </button>
         </div>
       </div>
 
-      <!-- ▸ Audit Trail -->
+      <!-- ▸ Audit Trail (unchanged / static for now) -->
       <div class="dash-card" id="audit-section">
         <div class="dash-card-header">
           <h2><i class="bi bi-journal-text"></i> Audit Trail</h2>
@@ -477,7 +434,62 @@
 
     </div><!-- /dash-grid -->
 
+    <!-- Bootstrap JS (needed for modal) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ✅ Add Observation Modal (MUST be inside <body>) -->
+    <div class="modal fade" id="addObsModal" tabindex="-1" aria-labelledby="addObsModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+
+          <div class="modal-header">
+            <h5 class="modal-title" id="addObsModalLabel">Add Daily Observation / To-Do</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Note</label>
+              <textarea id="obsNote" class="form-control" rows="3" placeholder="Write the note..."></textarea>
+            </div>
+
+            <div class="d-flex gap-3 mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="isObs" checked>
+                <label class="form-check-label" for="isObs">Observation</label>
+              </div>
+
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="isTodo">
+                <label class="form-check-label" for="isTodo">To-Do</label>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              <select id="obsStatus" class="form-select">
+                <option value="pending" selected>Pending</option>
+                <option value="complete">Complete</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Horse ID (optional)</label>
+              <input id="horseId" class="form-control" placeholder="e.g. 0001">
+            </div>
+
+            <div class="alert alert-danger d-none" id="obsError"></div>
+            <div class="alert alert-success d-none" id="obsSuccess">Saved!</div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnSaveObs">Save</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
 
     <script>
       // Load and display the current user's name from localStorage
@@ -486,6 +498,175 @@
         const storedUsername = localStorage.getItem('currentUsername') || 'user123';
         userFullName.textContent = storedUsername;
       });
+    </script>
+
+    <!-- ✅ Dashboard + Modal JS (loads from MongoDB + saves to MongoDB) -->
+    <script>
+      const API_BASE = "http://127.0.0.1:5000"; // change if your flask runs elsewhere
+      let addObsModal;
+
+      window.addEventListener('DOMContentLoaded', function () {
+        // Bootstrap modal instance
+        addObsModal = new bootstrap.Modal(document.getElementById('addObsModal'));
+
+        // Open modal
+        document.getElementById('btnAddObs').addEventListener('click', () => {
+          clearObsAlerts();
+          document.getElementById('obsNote').value = "";
+          document.getElementById('isObs').checked = true;
+          document.getElementById('isTodo').checked = false;
+          document.getElementById('obsStatus').value = "pending";
+          document.getElementById('horseId').value = "";
+          addObsModal.show();
+        });
+
+        // Save
+        document.getElementById('btnSaveObs').addEventListener('click', saveObsToDb);
+
+        // Load list from MongoDB
+        loadDailyObs();
+      });
+
+      async function loadDailyObs() {
+        try {
+          const res = await fetch(`${API_BASE}/api/daily-obs?limit=50`);
+          const items = await res.json();
+
+          if (!res.ok) {
+            console.error("GET /api/daily-obs failed:", items);
+            setDailyObsEmpty("Failed to load items.");
+            return;
+          }
+
+          renderDailyObs(items);
+          updateDailyObsBadge(items.length);
+
+        } catch (e) {
+          console.error("Failed to load daily obs:", e);
+          setDailyObsEmpty("Network error loading items.");
+        }
+      }
+
+      function setDailyObsEmpty(msg) {
+        const list = document.getElementById("dailyObsList");
+        if (list) {
+          list.innerHTML = `<div class="text-muted" style="padding:0.75rem 0;">${escapeHtml(msg)}</div>`;
+        }
+        updateDailyObsBadge(0);
+      }
+
+      function updateDailyObsBadge(count) {
+        const badge = document.getElementById("dailyObsBadge");
+        if (badge) badge.textContent = `${count} items`;
+      }
+
+      function renderDailyObs(items) {
+        const list = document.getElementById("dailyObsList");
+        if (!list) return;
+
+        if (!items || items.length === 0) {
+          list.innerHTML = `<div class="text-muted" style="padding:0.75rem 0;">No observations yet.</div>`;
+          return;
+        }
+
+        list.innerHTML = items.map(item => {
+          const isComplete = item.status === "complete";
+
+          // Icon choice:
+          // - complete => green check
+          // - pending todo => orange clock
+          // - pending obs => red alert
+          const iconClass = isComplete ? "icon-done" : (item.is_todo ? "icon-todo" : "icon-alert");
+          const iconHtml  = isComplete
+            ? `<i class="bi bi-check-circle-fill"></i>`
+            : (item.is_todo ? `<i class="bi bi-clock-fill"></i>` : `<i class="bi bi-exclamation-triangle-fill"></i>`);
+
+          const tagClass = isComplete ? "tag-complete" : "tag-pending";
+          const tagText  = isComplete ? "Complete" : "Pending";
+
+          const parts = [];
+          if (item.horse_id) parts.push(`Horse ${item.horse_id}`);
+          if (item.created_by) parts.push(item.created_by);
+          if (item.date) {
+            const d = new Date(item.date);
+            if (!isNaN(d.getTime())) parts.push(d.toLocaleString());
+          }
+          const meta = parts.join(" · ");
+
+          return `
+            <div class="item-row">
+              <div class="item-icon ${iconClass}">${iconHtml}</div>
+              <div class="item-text">
+                <div class="title">${escapeHtml(item.note || "")}</div>
+                <div class="meta">${escapeHtml(meta)}</div>
+                <span class="tag ${tagClass}">${tagText}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+
+      function clearObsAlerts() {
+        const err = document.getElementById('obsError');
+        const ok = document.getElementById('obsSuccess');
+        err.classList.add('d-none'); err.textContent = "";
+        ok.classList.add('d-none');
+      }
+
+      async function saveObsToDb() {
+        clearObsAlerts();
+
+        const note = document.getElementById('obsNote').value.trim();
+        const obs = document.getElementById('isObs').checked;
+        const todo = document.getElementById('isTodo').checked;
+        const status = document.getElementById('obsStatus').value;
+        const horse_id = document.getElementById('horseId').value.trim() || null;
+
+        const created_by = localStorage.getItem('currentUsername') || "user123";
+
+        if (!note) return showObsError("Please enter a note.");
+        if (!(obs || todo)) return showObsError("Select Observation and/or To-Do.");
+
+        try {
+          const res = await fetch(`${API_BASE}/api/daily-obs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ note, obs, todo, status, horse_id, created_by })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            return showObsError(data.error || "Failed to save.");
+          }
+
+          document.getElementById('obsSuccess').classList.remove('d-none');
+
+          setTimeout(() => {
+            addObsModal.hide();
+            loadDailyObs(); // ✅ refresh list from MongoDB
+          }, 300);
+
+        } catch (e) {
+          showObsError("Network error. Is your Flask server running and CORS enabled?");
+        }
+      }
+
+      function showObsError(msg) {
+        const err = document.getElementById('obsError');
+        err.textContent = msg;
+        err.classList.remove('d-none');
+      }
+
+      function escapeHtml(str) {
+        return (str || "").replace(/[&<>"']/g, (m) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        }[m]));
+      }
     </script>
   </body>
 </html>
