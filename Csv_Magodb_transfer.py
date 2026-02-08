@@ -43,15 +43,20 @@ with open(csv_path, newline='', encoding='utf-8') as csvfile:
         # Basic normalization: strip whitespace from keys and values
         norm = {k.strip(): (v.strip() if v is not None else '') for k, v in row.items()}
 
-        # Convert numeric-looking Age field if present (non-destructive)
+        # Convert Age to Date of Birth (calculate from age in 2026)
+        # If age is 29 in 2026, DOB is approximately 2026 - 29 = 1997
         age_fields = ['Age', 'Age (in 2026)', 'age']
         for af in age_fields:
             if af in norm and norm[af]:
                 try:
-                    # keep only leading digits
                     digits = ''.join(ch for ch in norm[af] if ch.isdigit())
                     if digits:
-                        norm[af] = int(digits)
+                        age = int(digits)
+                        birth_year = 2026 - age
+                        norm['Date_of_Birth'] = f'{birth_year}-01-01'  # approximate to Jan 1 of birth year
+                        # remove Age field after conversion
+                        if af in norm:
+                            del norm[af]
                 except Exception:
                     pass
 
