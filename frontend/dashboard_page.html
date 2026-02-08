@@ -359,7 +359,7 @@
             </div>
             <div class="col-4">
               <div style="background:#fff3e0;border-radius:10px;padding:1rem 0.5rem;">
-                <div style="font-size:1.6rem;font-weight:800;color:#e65100;">3</div>
+                <div id="pendingTaskCount" style="font-size:1.6rem;font-weight:800;color:#e65100;">0</div>
                 <div style="font-size:0.78rem;font-weight:600;color:var(--text-muted);">Pending Tasks</div>
               </div>
             </div>
@@ -520,6 +520,10 @@
           const badge = document.getElementById('dailyObsBadge');
           listContainer.innerHTML = '';
           badge.innerText = items.length + ' items';
+
+          // Update pending task count in Quick Stats
+          const pendingCount = items.filter(i => i.is_todo && i.status !== 'complete').length;
+          document.getElementById('pendingTaskCount').innerText = pendingCount;
 
           items.forEach(item => {
             const isTodo = item.is_todo;
