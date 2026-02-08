@@ -459,27 +459,57 @@
           }
       }
 
-      // 6. NOTIFICATION PREFERENCES (frontend-only for now)
-      function loadNotifPrefs() {
-          const prefs = JSON.parse(localStorage.getItem('notif_prefs') || '{}');
-          document.getElementById('notifTodo').checked = prefs.todo !== false;       // default on
-          document.getElementById('notifObs').checked = prefs.obs !== false;         // default on
-          document.getElementById('notifHorse').checked = prefs.horse === true;      // default off
-          document.getElementById('notifSecurity').checked = prefs.security !== false; // default on
+      // 6. NOTIFICATION PREFERENCES (saved to MongoDB)
+      async function loadNotifPrefs() {
+          try {
+              const res = await fetch(`/api/user/notification-prefs?email=${encodeURIComponent(userEmail)}`);
+              if (res.ok) {
+                  const prefs = await res.json();
+                  document.getElementById('notifTodo').checked = prefs.todo !== false;
+                  document.getElementById('notifObs').checked = prefs.obs !== false;
+                  document.getElementById('notifHorse').checked = prefs.horse === true;
+                  document.getElementById('notifSecurity').checked = prefs.security !== false;
+              } else {
+                  // Fallback to defaults
+                  document.getElementById('notifTodo').checked = true;
+                  document.getElementById('notifObs').checked = true;
+                  document.getElementById('notifHorse').checked = false;
+                  document.getElementById('notifSecurity').checked = true;
+              }
+          } catch (e) {
+              console.error('Failed to load notification prefs:', e);
+          }
       }
 
-      function saveNotifPrefs() {
+      async function saveNotifPrefs() {
           const prefs = {
+              email: userEmail,
               todo: document.getElementById('notifTodo').checked,
               obs: document.getElementById('notifObs').checked,
               horse: document.getElementById('notifHorse').checked,
               security: document.getElementById('notifSecurity').checked
           };
-          localStorage.setItem('notif_prefs', JSON.stringify(prefs));
 
           const statusEl = document.getElementById('notifStatus');
-          statusEl.className = 'alert alert-success mt-2 mb-0 small';
-          statusEl.innerText = 'Notification preferences saved!';
+          try {
+              const res = await fetch('/api/user/notification-prefs', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(prefs)
+              });
+              const data = await res.json();
+              if (res.ok) {
+                  statusEl.className = 'alert alert-success mt-2 mb-0 small';
+                  statusEl.innerText = 'Notification preferences saved!';
+              } else {
+                  statusEl.className = 'alert alert-danger mt-2 mb-0 small';
+                  statusEl.innerText = data.error || 'Failed to save preferences.';
+              }
+          } catch (e) {
+              console.error(e);
+              statusEl.className = 'alert alert-danger mt-2 mb-0 small';
+              statusEl.innerText = 'Server error. Is the Flask server running?';
+          }
           statusEl.classList.remove('d-none');
           setTimeout(() => statusEl.classList.add('d-none'), 3000);
       }

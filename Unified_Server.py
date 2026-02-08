@@ -10,6 +10,7 @@ import secrets
 import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import threading
 
 # --- CONFIGURATION ---
 app = Flask(__name__, static_folder='frontend', static_url_path='')
@@ -92,6 +93,161 @@ def send_verification_email(to_email, first_name, token):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         return False
+
+
+# --- CHANGE NOTIFICATION EMAILS ---
+
+# Map actions to the notification preference key they belong to
+ACTION_TO_PREF = {
+    'ADD_HORSE': 'horse',
+    'UPDATE_HORSE': 'horse',
+    'DELETE_HORSE': 'horse',
+    'UPDATE_PROFILE': 'security',
+    'CHANGE_PASSWORD': 'security',
+    'LOGIN': 'security',
+    'ADD_DAILY_OBS': 'obs',
+    'DELETE_DAILY_OBS': 'obs',
+    'TODO_REMINDER': 'todo',
+}
+
+# Friendly labels for actions
+ACTION_LABELS = {
+    'ADD_HORSE': '🐴 New Horse Added',
+    'UPDATE_HORSE': '✏️ Horse Updated',
+    'DELETE_HORSE': '🗑️ Horse Deleted',
+    'UPDATE_PROFILE': '👤 User Profile Updated',
+    'CHANGE_PASSWORD': '🔑 Password Changed',
+}
+
+def _build_changes_html(details):
+    """Build HTML for the changes list in a notification email."""
+    changes = details.get('changes', [])
+    if not changes:
+        # Just show the details as key-value pairs
+        items = ''.join(
+            f'<tr><td style="padding:6px 12px;font-weight:600;color:#388e3c;">{k}</td>'
+            f'<td style="padding:6px 12px;">{v}</td></tr>'
+            for k, v in details.items() if k != 'changes'
+        )
+        return f'<table style="width:100%;border-collapse:collapse;margin:1rem 0;">{items}</table>'
+    
+    # Detailed changes (old → new)
+    rows = ''
+    for c in changes:
+        rows += (
+            f'<tr>'
+            f'<td style="padding:6px 12px;font-weight:600;color:#388e3c;">{c.get("field","")}</td>'
+            f'<td style="padding:6px 12px;color:#c62828;text-decoration:line-through;">{c.get("old","—")}</td>'
+            f'<td style="padding:6px 12px;color:#2e7d32;font-weight:600;">{c.get("new","—")}</td>'
+            f'</tr>'
+        )
+    horse_name = details.get('horse_name', '')
+    header = f'<p style="font-weight:700;color:#263238;margin-bottom:0.5rem;">Horse: {horse_name}</p>' if horse_name else ''
+    return (
+        f'{header}'
+        f'<table style="width:100%;border-collapse:collapse;margin:1rem 0;font-size:0.9rem;">'
+        f'<tr style="background:#e8f5e9;"><th style="padding:8px 12px;text-align:left;">Field</th>'
+        f'<th style="padding:8px 12px;text-align:left;">Old</th>'
+        f'<th style="padding:8px 12px;text-align:left;">New</th></tr>'
+        f'{rows}</table>'
+    )
+
+def _user_wants_notification(user_doc, action):
+    """Check if a user's notification preferences allow this action type."""
+    pref_key = ACTION_TO_PREF.get(action)
+    if not pref_key:
+        return False  # unknown action type, don't send
+    
+    # Default prefs: todo=True, obs=True, horse=False, security=True
+    defaults = {'todo': True, 'obs': True, 'horse': False, 'security': True}
+    prefs = user_doc.get('notification_prefs', defaults)
+    
+    return prefs.get(pref_key, defaults.get(pref_key, False))
+
+def send_change_notification(action, user_id, details):
+    """Send email notification to users who opted in. Runs in background thread."""
+    if action not in ACTION_TO_PREF:
+        return
+
+    def _send():
+        try:
+            # Get all verified, active users (not just admins)
+            users = list(user_logins.find(
+                {'email_verified': True, 'is_active': True},
+                {'email': 1, 'first_name': 1, 'notification_prefs': 1, 'role': 1}
+            ))
+            if not users:
+                print("ℹ️ No users to notify.")
+                return
+
+            label = ACTION_LABELS.get(action, action)
+            changes_html = _build_changes_html(details)
+            timestamp = datetime.utcnow().strftime('%b %d, %Y at %I:%M %p UTC')
+
+            for user in users:
+                # Skip the user who made the change (don't notify yourself)
+                if user.get('email', '').lower() == str(user_id).lower():
+                    continue
+
+                # Check this user's notification preferences
+                if not _user_wants_notification(user, action):
+                    print(f"⏭️ Skipping {user['email']} — {action} notifications disabled")
+                    continue
+
+                try:
+                    first_name = user.get('first_name', 'there')
+                    html = f"""
+                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:2rem;">
+                        <div style="text-align:center;margin-bottom:1.5rem;">
+                            <h1 style="color:#388e3c;margin:0;">🐴 Retirement Home for Horses</h1>
+                            <p style="color:#546e7a;font-size:0.9rem;">Change Notification</p>
+                        </div>
+                        <p style="color:#333;font-size:1rem;">Hi {first_name},</p>
+                        <div style="background:#f5faf6;border:2px solid #81c784;border-radius:12px;padding:1.5rem;">
+                            <h2 style="color:#388e3c;margin-top:0;font-size:1.2rem;">{label}</h2>
+                            <p style="color:#555;font-size:0.9rem;margin:0.3rem 0;">
+                                <strong>By:</strong> {user_id}<br>
+                                <strong>Time:</strong> {timestamp}
+                            </p>
+                            {changes_html}
+                        </div>
+                        <div style="margin-top:1.5rem;text-align:center;">
+                            <a href="{FRONTEND_URL}/audit_trail.html" 
+                               style="background:linear-gradient(135deg,#388e3c,#00796b);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;font-size:0.9rem;display:inline-block;">
+                                View Full Audit Trail
+                            </a>
+                        </div>
+                        <hr style="border:none;border-top:1px solid #eee;margin:2rem 0;">
+                        <p style="color:#bbb;font-size:0.75rem;text-align:center;">
+                            You can change your notification preferences in your 
+                            <a href="{FRONTEND_URL}/user_profile_page.html" style="color:#79AED4;">profile settings</a>.<br>
+                            Retirement Home for Horses, Inc. — Alachua, FL
+                        </p>
+                    </div>
+                    """
+
+                    msg = MIMEMultipart('alternative')
+                    msg['Subject'] = f'{label} — Retirement Home for Horses'
+                    msg['From'] = SMTP_EMAIL
+                    msg['To'] = user['email']
+                    msg.attach(MIMEText(html, 'html'))
+
+                    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
+                        server.ehlo()
+                        server.starttls()
+                        server.ehlo()
+                        server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
+                        server.sendmail(SMTP_EMAIL, user['email'], msg.as_string())
+                    print(f"📧 Notification sent to {user['email']} for {action}")
+                except Exception as e:
+                    print(f"❌ Failed to notify {user['email']}: {e}")
+
+        except Exception as e:
+            print(f"❌ Notification system error: {e}")
+
+    # Run in background thread so the API response isn't delayed
+    threading.Thread(target=_send, daemon=True).start()
+
 
 # --- SERVE FRONTEND ---
 @app.route('/')
@@ -359,6 +515,54 @@ def change_password():
         return jsonify({'error': str(e)}), 500
 
 
+# --- NOTIFICATION PREFERENCES ---
+
+@app.route('/api/user/notification-prefs', methods=['GET'])
+def get_notification_prefs():
+    try:
+        email = request.args.get('email')
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        user = user_logins.find_one({'email': email}, {'notification_prefs': 1})
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Default prefs: todo=on, obs=on, horse=off, security=on
+        defaults = {'todo': True, 'obs': True, 'horse': False, 'security': True}
+        prefs = user.get('notification_prefs', defaults)
+        return jsonify(prefs), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/user/notification-prefs', methods=['PUT'])
+def update_notification_prefs():
+    try:
+        data = request.json
+        email = data.get('email')
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        prefs = {
+            'todo': bool(data.get('todo', True)),
+            'obs': bool(data.get('obs', True)),
+            'horse': bool(data.get('horse', False)),
+            'security': bool(data.get('security', True)),
+        }
+
+        result = user_logins.update_one(
+            {'email': email},
+            {'$set': {'notification_prefs': prefs}}
+        )
+
+        if result.matched_count == 0:
+            return jsonify({'error': 'User not found'}), 404
+
+        return jsonify({'message': 'Notification preferences saved'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ==========================================
 #      SECTION 2: HORSE MANAGEMENT
 # ==========================================
@@ -406,13 +610,17 @@ def add_horse():
         print(f"✅ Horse '{horse_name}' inserted with _id: {result.inserted_id}")
 
         # Log to audit trail
+        audit_details = {'horse_name': horse_name}
         audit_collection.insert_one({
             'action': 'ADD_HORSE',
             'table': 'Horse_Tables',
             'user_id': user_email,
-            'details': {'horse_name': horse_name},
+            'details': audit_details,
             'timestamp': datetime.utcnow()
         })
+
+        # Notify admins by email
+        send_change_notification('ADD_HORSE', user_email, audit_details)
 
         return jsonify({'message': 'Horse added', 'id': str(result.inserted_id)}), 201
     except Exception as e:
@@ -458,16 +666,17 @@ def update_horse(id):
         )
 
         # Log to audit trail with detailed changes
+        audit_details = {'horse_name': horse_name, 'changes': changes}
         audit_collection.insert_one({
             'action': 'UPDATE_HORSE',
             'table': 'Horse_Tables',
             'user_id': user_email,
-            'details': {
-                'horse_name': horse_name,
-                'changes': changes
-            },
+            'details': audit_details,
             'timestamp': datetime.utcnow()
         })
+
+        # Notify admins by email
+        send_change_notification('UPDATE_HORSE', user_email, audit_details)
 
         return jsonify({'message': 'Horse updated'}), 200
     except Exception as e:
@@ -490,13 +699,17 @@ def delete_horse(id):
             return jsonify({'error': 'Horse not found'}), 404
 
         # Log to audit trail
+        audit_details = {'horse_name': horse_name}
         audit_collection.insert_one({
             'action': 'DELETE_HORSE',
             'table': 'Horse_Tables',
             'user_id': user_email,
-            'details': {'horse_name': horse_name},
+            'details': audit_details,
             'timestamp': datetime.utcnow()
         })
+
+        # Notify admins by email
+        send_change_notification('DELETE_HORSE', user_email, audit_details)
 
         return jsonify({'message': 'Horse deleted'}), 200
     except Exception as e:
