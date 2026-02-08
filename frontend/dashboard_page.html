@@ -276,138 +276,14 @@
       .scroll-body {
         max-height: 320px;
         overflow-y: auto;
-        transition: max-height 0.4s ease;
       }
       .scroll-body::-webkit-scrollbar { width: 5px; }
       .scroll-body::-webkit-scrollbar-thumb { background: var(--green-mid); border-radius: 4px; }
-
-      /* ── Expand audit button ── */
-      .expand-btn {
-        background: none;
-        border: none;
-        color: var(--blue-dark);
-        cursor: pointer;
-        font-size: 1.2rem;
-        padding: 0.3rem 0.6rem;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-      }
-      .expand-btn:hover {
-        background: var(--green-light);
-        color: var(--green-dark);
-        transform: scale(1.1);
-      }
-
-      /* ── Minimize toggle button ── */
-      .minimize-toggle-btn {
-        background: var(--green-light);
-        border: 1px solid var(--green-mid);
-        color: var(--green-dark);
-        cursor: pointer;
-        font-size: 1rem;
-        padding: 0.4rem 0.8rem;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-      }
-      .minimize-toggle-btn:hover {
-        background: var(--green-mid);
-        color: white;
-        transform: translateY(-2px);
-      }
-
-      /* ── Expanded audit card state ── */
-      #auditCard.audit-expanded .scroll-body {
-        max-height: 900px;
-      }
-      #auditCard.audit-expanded {
-        grid-column: 1 / -1;
-      }
-
-      /* ── Audit modal ── */
-      .audit-modal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1000;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(2px);
-      }
-      .audit-modal.active {
-        display: flex;
-      }
-      .audit-modal-content {
-        background: #fff;
-        border-radius: 14px;
-        box-shadow: 0 12px 48px rgba(0,0,0,0.3);
-        max-width: 95vw;
-        width: 95%;
-        max-height: 95vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      }
-      .audit-modal-header {
-        padding: 1.5rem 1.5rem 1rem;
-        border-bottom: 2px solid var(--green-mid);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-      .audit-modal-header h2 {
-        margin: 0;
-        color: var(--green-dark);
-        font-weight: 800;
-      }
-      .audit-close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        color: var(--text-muted);
-        cursor: pointer;
-        padding: 0;
-        transition: color 0.2s;
-      }
-      .audit-close-btn:hover { color: var(--text-dark); }
-      .audit-modal-body {
-        padding: 1.5rem;
-        overflow-y: auto;
-        flex: 1;
-      }
-      .audit-entry-full {
-        padding: 1rem;
-        margin-bottom: 1rem;
-        background: var(--green-light);
-        border-left: 4px solid var(--green-mid);
-        border-radius: 8px;
-      }
-      .audit-entry-full:last-child { margin-bottom: 0; }
-      .audit-entry-full .title {
-        font-weight: 700;
-        color: var(--green-dark);
-        font-size: 0.95rem;
-        margin-bottom: 0.3rem;
-      }
-      .audit-entry-full .meta {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        margin-bottom: 0.5rem;
-      }
-      .audit-entry-full .description {
-        font-size: 0.9rem;
-        color: var(--text-dark);
-        line-height: 1.4;
-      }
     </style>
   </head>
 
   <body>
 
-    <!-- ── Top bar ── -->
     <div class="top-bar">
       <a class="brand" href="home_page.html">
         <i class="bi bi-house-door-fill"></i> The Retirement Home for Horses, Inc.
@@ -418,7 +294,6 @@
       </div>
     </div>
 
-    <!-- ── Hero header ── -->
     <div class="page-header">
       <h1>Dashboard</h1>
       <p>Overview of daily operations, tasks &amp; horse records</p>
@@ -432,51 +307,30 @@
       </div>
     </div>
 
-    <!-- ── Dashboard Cards ── -->
     <div class="dash-grid">
-
-      <!-- ▸ Daily Observations / To-Do (NOW PULLS FROM MONGODB) -->
+      
       <div class="dash-card" id="daily-obs-section">
         <div class="dash-card-header">
           <h2><i class="bi bi-clipboard-pulse"></i> Daily Observations &amp; To-Do</h2>
           <span class="badge-count" id="dailyObsBadge">0 items</span>
         </div>
-
         <div class="dash-card-body scroll-body">
-          <!-- JS renders MongoDB items here -->
           <div id="dailyObsList"></div>
-
           <button class="add-btn" id="btnAddObs" type="button">
             <i class="bi bi-plus-circle"></i> Add observation
           </button>
         </div>
       </div>
 
-<<<<<<< HEAD
-      <!-- ▸ Audit Trail -->
-      <div class="dash-card" id="auditCard" style="position: relative;">
-=======
-      <!-- ▸ Audit Trail (unchanged / static for now) -->
       <div class="dash-card" id="audit-section">
->>>>>>> dbf052fd7133ec68e21a9fbeb395ea3d7da8ef7a
         <div class="dash-card-header">
           <h2><i class="bi bi-journal-text"></i> Audit Trail</h2>
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span class="badge-count">Recent</span>
-            <button class="expand-btn" onclick="openAuditModal()" title="Expand Audit Trail"><i class="bi bi-expand"></i></button>
-          </div>
+          <span class="badge-count">Recent</span>
         </div>
         <div class="dash-card-body scroll-body" id="auditTrailBody">
-          <!-- Audit entries loaded from API -->
-        </div>
-        <div style="padding: 0.75rem 1rem; border-top: 1px solid var(--green-light); display: flex; justify-content: flex-end;">
-          <button class="minimize-toggle-btn" id="auditToggleBtn" onclick="toggleAuditExpanded()" title="Toggle Audit Panel Size">
-            <i class="bi bi-plus-lg"></i>
-          </button>
-        </div>
+          </div>
       </div>
 
-      <!-- ▸ Horse Database (clickable) -->
       <div class="dash-card" id="horse-db-section">
         <div class="dash-card-header">
           <h2><i class="bi bi-database-fill"></i> Horse Database</h2>
@@ -491,7 +345,6 @@
         </a>
       </div>
 
-      <!-- ▸ Quick Stats -->
       <div class="dash-card">
         <div class="dash-card-header">
           <h2><i class="bi bi-bar-chart-fill"></i> Quick Stats</h2>
@@ -520,55 +373,30 @@
         </div>
       </div>
 
-    </div><!-- /dash-grid -->
+    </div><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<<<<<<< HEAD
-    <!-- ── Audit Trail Modal ── -->
-    <div class="audit-modal" id="auditModal">
-      <div class="audit-modal-content">
-        <div class="audit-modal-header">
-          <h2><i class="bi bi-journal-text"></i> Full Audit Trail</h2>
-          <button class="audit-close-btn" onclick="closeAuditModal()"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="audit-modal-body" id="auditModalBody">
-          <!-- Full audit entries load here -->
-        </div>
-      </div>
-    </div>
-
-=======
-    <!-- Bootstrap JS (needed for modal) -->
->>>>>>> dbf052fd7133ec68e21a9fbeb395ea3d7da8ef7a
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- ✅ Add Observation Modal (MUST be inside <body>) -->
     <div class="modal fade" id="addObsModal" tabindex="-1" aria-labelledby="addObsModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
-
           <div class="modal-header">
             <h5 class="modal-title" id="addObsModalLabel">Add Daily Observation / To-Do</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-
           <div class="modal-body">
             <div class="mb-3">
               <label class="form-label">Note</label>
               <textarea id="obsNote" class="form-control" rows="3" placeholder="Write the note..."></textarea>
             </div>
-
             <div class="d-flex gap-3 mb-3">
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="isObs" checked>
                 <label class="form-check-label" for="isObs">Observation</label>
               </div>
-
               <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="isTodo">
                 <label class="form-check-label" for="isTodo">To-Do</label>
               </div>
             </div>
-
             <div class="mb-3">
               <label class="form-label">Status</label>
               <select id="obsStatus" class="form-select">
@@ -576,308 +404,139 @@
                 <option value="complete">Complete</option>
               </select>
             </div>
-
             <div class="mb-3">
               <label class="form-label">Horse ID (optional)</label>
               <input id="horseId" class="form-control" placeholder="e.g. 0001">
             </div>
-
             <div class="alert alert-danger d-none" id="obsError"></div>
             <div class="alert alert-success d-none" id="obsSuccess">Saved!</div>
           </div>
-
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
             <button type="button" class="btn btn-primary" id="btnSaveObs">Save</button>
           </div>
-
         </div>
       </div>
     </div>
 
     <script>
       const API_URL = "http://127.0.0.1:5000";
-      let allAudits = [];  // Store all audits for modal
 
-      // Load username and audits on page load
-      window.addEventListener('DOMContentLoaded', function() {
+      // 1. AUTH CHECK
+      const userEmail = localStorage.getItem('user_email');
+      if (!userEmail) window.location.href = 'login_page.html';
+
+      // 2. SETUP PAGE
+      window.addEventListener('DOMContentLoaded', () => {
         const userFullName = document.getElementById('userFullName');
-        const storedUsername = localStorage.getItem('currentUsername') || 'user123';
+        const storedUsername = localStorage.getItem('user_name') || 'Volunteer';
         userFullName.textContent = storedUsername;
-        
-        // Load audit trail from API
-        loadAuditTrail();
-      });
-
-      // Fetch and display audit trail from MongoDB
-      async function loadAuditTrail() {
-        try {
-          const response = await fetch(`${API_URL}/audits?limit=50`);
-          allAudits = await response.json();
-          
-          const auditBody = document.getElementById('auditTrailBody');
-          auditBody.innerHTML = '';
-          
-          if (!allAudits || allAudits.length === 0) {
-            auditBody.innerHTML = '<div style="text-align:center;color:#999;padding:2rem;">No audit entries found</div>';
-            return;
-          }
-          
-          // Display only first 6 in the dashboard card
-          allAudits.slice(0, 6).forEach(audit => {
-            const timestamp = new Date(audit.timestamp).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit'
-            });
-            
-            // Determine icon based on action type
-            let iconClass = 'bi bi-pencil-square';
-            if (audit.action.includes('intake') || audit.action.includes('new')) {
-              iconClass = 'bi bi-person-plus-fill';
-            } else if (audit.action.includes('medical') || audit.action.includes('health')) {
-              iconClass = 'bi bi-heart-pulse-fill';
-            }
-            
-            const auditHtml = `
-              <div class="item-row">
-                <div class="item-icon icon-audit"><i class="${iconClass}"></i></div>
-                <div class="item-text">
-                  <div class="title">${audit.horse_name ? audit.horse_name + ' — ' + audit.action : audit.action}</div>
-                  <div class="meta">${timestamp} · ${audit.description}</div>
-                </div>
-              </div>
-            `;
-            auditBody.innerHTML += auditHtml;
-          });
-        } catch (error) {
-          console.error('Error loading audit trail:', error);
-          const auditBody = document.getElementById('auditTrailBody');
-          auditBody.innerHTML = '<div style="color:#999;padding:1rem;">Unable to load audit trail. Is the server running?</div>';
-        }
-      }
-
-      // Modal functions
-      function openAuditModal() {
-        const modal = document.getElementById('auditModal');
-        const modalBody = document.getElementById('auditModalBody');
-        
-        if (!allAudits || allAudits.length === 0) {
-          modalBody.innerHTML = '<div style="text-align:center;color:#999;padding:2rem;">No audit entries found</div>';
-        } else {
-          modalBody.innerHTML = '';
-          allAudits.forEach(audit => {
-            const timestamp = new Date(audit.timestamp).toLocaleString('en-US', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-            
-            const auditHtml = `
-              <div class="audit-entry-full">
-                <div class="title">${audit.horse_name ? audit.horse_name + ' — ' + audit.action : audit.action}</div>
-                <div class="meta">${timestamp} by ${audit.user || 'System'}</div>
-                <div class="description">${audit.description || 'No additional details'}</div>
-              </div>
-            `;
-            modalBody.innerHTML += auditHtml;
-          });
-        }
-        
-        modal.classList.add('active');
-      }
-
-      function closeAuditModal() {
-        const modal = document.getElementById('auditModal');
-        modal.classList.remove('active');
-      }
-
-      // Toggle expanded state of audit card
-      function toggleAuditExpanded() {
-        const auditCard = document.getElementById('auditCard');
-        const icon = document.querySelector('#auditToggleBtn i');
-        auditCard.classList.toggle('audit-expanded');
-        icon.classList.toggle('bi-plus-lg');
-        icon.classList.toggle('bi-dash-lg');
-      }
-
-      // Close modal when clicking outside
-      document.addEventListener('click', function(event) {
-        const modal = document.getElementById('auditModal');
-        if (event.target === modal) {
-          closeAuditModal();
-        }
-      });
-    </script>
-
-    <!-- ✅ Dashboard + Modal JS (loads from MongoDB + saves to MongoDB) -->
-    <script>
-      const API_BASE = "http://127.0.0.1:5000"; // change if your flask runs elsewhere
-      let addObsModal;
-
-      window.addEventListener('DOMContentLoaded', function () {
-        // Bootstrap modal instance
-        addObsModal = new bootstrap.Modal(document.getElementById('addObsModal'));
-
-        // Open modal
-        document.getElementById('btnAddObs').addEventListener('click', () => {
-          clearObsAlerts();
-          document.getElementById('obsNote').value = "";
-          document.getElementById('isObs').checked = true;
-          document.getElementById('isTodo').checked = false;
-          document.getElementById('obsStatus').value = "pending";
-          document.getElementById('horseId').value = "";
-          addObsModal.show();
-        });
-
-        // Save
-        document.getElementById('btnSaveObs').addEventListener('click', saveObsToDb);
-
-        // Load list from MongoDB
         loadDailyObs();
       });
 
+      // --- RESTORED: DAILY OBS LOGIC ---
+
       async function loadDailyObs() {
         try {
-          const res = await fetch(`${API_BASE}/api/daily-obs?limit=50`);
+          const res = await fetch(`${API_URL}/api/daily-obs`);
           const items = await res.json();
+          
+          const listContainer = document.getElementById('dailyObsList');
+          const badge = document.getElementById('dailyObsBadge');
+          listContainer.innerHTML = '';
+          badge.innerText = items.length + ' items';
 
-          if (!res.ok) {
-            console.error("GET /api/daily-obs failed:", items);
-            setDailyObsEmpty("Failed to load items.");
-            return;
-          }
+          items.forEach(item => {
+            const isTodo = item.is_todo;
+            const status = item.status; 
+            
+            // Icon Logic
+            let iconClass = 'bi bi-chat-left-text';
+            let iconBg = 'background:#e3f2fd; color:#1565c0;';
+            if (isTodo) {
+              if (status === 'complete') {
+                iconClass = 'bi bi-check-circle-fill';
+                iconBg = 'background:#e8f5e9; color:#388e3c;';
+              } else {
+                iconClass = 'bi bi-exclamation-circle-fill';
+                iconBg = 'background:#fff3e0; color:#e65100;';
+              }
+            }
 
-          renderDailyObs(items);
-          updateDailyObsBadge(items.length);
+            // Tag Logic
+            let tagHtml = '';
+            if (isTodo) {
+              if (status === 'complete') tagHtml = '<span class="tag tag-complete">Done</span>';
+              else tagHtml = '<span class="tag tag-pending">Pending</span>';
+            }
 
-        } catch (e) {
-          console.error("Failed to load daily obs:", e);
-          setDailyObsEmpty("Network error loading items.");
-        }
-      }
-
-      function setDailyObsEmpty(msg) {
-        const list = document.getElementById("dailyObsList");
-        if (list) {
-          list.innerHTML = `<div class="text-muted" style="padding:0.75rem 0;">${escapeHtml(msg)}</div>`;
-        }
-        updateDailyObsBadge(0);
-      }
-
-      function updateDailyObsBadge(count) {
-        const badge = document.getElementById("dailyObsBadge");
-        if (badge) badge.textContent = `${count} items`;
-      }
-
-      function renderDailyObs(items) {
-        const list = document.getElementById("dailyObsList");
-        if (!list) return;
-
-        if (!items || items.length === 0) {
-          list.innerHTML = `<div class="text-muted" style="padding:0.75rem 0;">No observations yet.</div>`;
-          return;
-        }
-
-        list.innerHTML = items.map(item => {
-          const isComplete = item.status === "complete";
-
-          // Icon choice:
-          // - complete => green check
-          // - pending todo => orange clock
-          // - pending obs => red alert
-          const iconClass = isComplete ? "icon-done" : (item.is_todo ? "icon-todo" : "icon-alert");
-          const iconHtml  = isComplete
-            ? `<i class="bi bi-check-circle-fill"></i>`
-            : (item.is_todo ? `<i class="bi bi-clock-fill"></i>` : `<i class="bi bi-exclamation-triangle-fill"></i>`);
-
-          const tagClass = isComplete ? "tag-complete" : "tag-pending";
-          const tagText  = isComplete ? "Complete" : "Pending";
-
-          const parts = [];
-          if (item.horse_id) parts.push(`Horse ${item.horse_id}`);
-          if (item.created_by) parts.push(item.created_by);
-          if (item.date) {
-            const d = new Date(item.date);
-            if (!isNaN(d.getTime())) parts.push(d.toLocaleString());
-          }
-          const meta = parts.join(" · ");
-
-          return `
+            const html = `
             <div class="item-row">
-              <div class="item-icon ${iconClass}">${iconHtml}</div>
+              <div class="item-icon" style="${iconBg}"><i class="${iconClass}"></i></div>
               <div class="item-text">
-                <div class="title">${escapeHtml(item.note || "")}</div>
-                <div class="meta">${escapeHtml(meta)}</div>
-                <span class="tag ${tagClass}">${tagText}</span>
+                <div class="title">${item.note}</div>
+                <div class="meta">
+                  Horse: ${item.horse_id || 'N/A'} • ${new Date(item.date).toLocaleDateString()}
+                  ${tagHtml}
+                </div>
               </div>
-            </div>
-          `;
-        }).join("");
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteItem('${item._id}')" style="border:none;">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>`;
+            listContainer.innerHTML += html;
+          });
+        } catch (e) {
+          console.error("Error loading obs:", e);
+        }
       }
 
-      function clearObsAlerts() {
-        const err = document.getElementById('obsError');
-        const ok = document.getElementById('obsSuccess');
-        err.classList.add('d-none'); err.textContent = "";
-        ok.classList.add('d-none');
-      }
+      // ADD OBS
+      const btnAddObs = document.getElementById('btnAddObs');
+      const addObsModal = new bootstrap.Modal(document.getElementById('addObsModal'));
+      const btnSaveObs = document.getElementById('btnSaveObs');
 
-      async function saveObsToDb() {
-        clearObsAlerts();
+      btnAddObs.addEventListener('click', () => {
+        document.getElementById('obsNote').value = '';
+        document.getElementById('obsSuccess').classList.add('d-none');
+        addObsModal.show();
+      });
 
-        const note = document.getElementById('obsNote').value.trim();
+      btnSaveObs.addEventListener('click', async () => {
+        const note = document.getElementById('obsNote').value;
         const obs = document.getElementById('isObs').checked;
         const todo = document.getElementById('isTodo').checked;
         const status = document.getElementById('obsStatus').value;
-        const horse_id = document.getElementById('horseId').value.trim() || null;
+        const horse_id = document.getElementById('horseId').value;
+        const created_by = localStorage.getItem('user_name');
 
-        const created_by = localStorage.getItem('currentUsername') || "user123";
-
-        if (!note) return showObsError("Please enter a note.");
-        if (!(obs || todo)) return showObsError("Select Observation and/or To-Do.");
+        if (!note) return alert("Note required");
 
         try {
-          const res = await fetch(`${API_BASE}/api/daily-obs`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ note, obs, todo, status, horse_id, created_by })
+          const res = await fetch(`${API_URL}/api/daily-obs`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({note, obs, todo, status, horse_id, created_by})
           });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            return showObsError(data.error || "Failed to save.");
+          if (res.ok) {
+            document.getElementById('obsSuccess').classList.remove('d-none');
+            setTimeout(() => {
+              addObsModal.hide();
+              loadDailyObs();
+            }, 500);
           }
-
-          document.getElementById('obsSuccess').classList.remove('d-none');
-
-          setTimeout(() => {
-            addObsModal.hide();
-            loadDailyObs(); // ✅ refresh list from MongoDB
-          }, 300);
-
         } catch (e) {
-          showObsError("Network error. Is your Flask server running and CORS enabled?");
+          console.error(e);
         }
-      }
+      });
 
-      function showObsError(msg) {
-        const err = document.getElementById('obsError');
-        err.textContent = msg;
-        err.classList.remove('d-none');
-      }
-
-      function escapeHtml(str) {
-        return (str || "").replace(/[&<>"']/g, (m) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        }[m]));
+      // DELETE OBS
+      async function deleteItem(id) {
+        if(!confirm("Delete this item?")) return;
+        try {
+          await fetch(`${API_URL}/api/daily-obs/${id}`, {method: 'DELETE'});
+          loadDailyObs();
+        } catch(e) { console.error(e); }
       }
     </script>
   </body>
