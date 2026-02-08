@@ -87,6 +87,7 @@
                 <th>Gender</th>
                 <th>Pasture</th>
                 <th>Notes</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="horseTableBody">
@@ -126,12 +127,11 @@
 
             const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
             const isAdmin = (userRole === 'admin');
+            console.log('User role:', userRole, '| isAdmin:', isAdmin);
 
             horses.forEach(horse => {
                 const horseName = horse.Name || horse.name || '?';
-                const deleteBtn = isAdmin
-                  ? `<button onclick="event.stopPropagation(); deleteHorse('${horse._id}')" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:700;font-size:0.8rem;" title="Delete horse (Admin only)"><i class="bi bi-trash"></i></button>`
-                  : '';
+                const horseId = horse._id || '';
                 const row = `
                     <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
                         <td><strong>${horseName}</strong></td>
@@ -139,10 +139,18 @@
                         <td>${horse.Gender || horse.gender || '-'}</td>
                         <td>${horse['Field Home'] || horse.pasture || '-'}</td>
                         <td>${horse.Notes || horse.general_notes || '-'}</td>
-                        <td class="action-buttons">${deleteBtn}</td>
+                        <td class="action-buttons"><button class="delete-horse-btn" data-id="${horseId}" data-name="${horseName}" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:700;font-size:0.8rem;" title="Delete horse"><i class="bi bi-trash"></i> Delete</button></td>
                     </tr>
                 `;
                 tableBody.innerHTML += row;
+            });
+
+            // Attach delete click handlers
+            document.querySelectorAll('.delete-horse-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    deleteHorse(this.dataset.id);
+                });
             });
     }
 
