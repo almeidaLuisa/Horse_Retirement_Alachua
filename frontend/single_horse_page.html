@@ -246,6 +246,83 @@
       }
       .horse-name-field::placeholder { color: var(--text-muted); font-weight: 600; }
       .horse-name-field:focus { border-bottom-color: var(--blue-dark); }
+
+      /* Edit / Save buttons */
+      .edit-bar {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+      }
+      .btn-edit, .btn-save, .btn-cancel {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0.45rem 1.1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        border: none;
+        cursor: pointer;
+        font-family: 'Nunito', sans-serif;
+        transition: all 0.2s;
+      }
+      .btn-edit {
+        background: var(--blue-dark);
+        color: #fff;
+      }
+      .btn-edit:hover { background: #00695c; }
+      .btn-save {
+        background: var(--green-dark);
+        color: #fff;
+      }
+      .btn-save:hover { background: #2e7d32; }
+      .btn-cancel {
+        background: #eceff1;
+        color: var(--text-dark);
+      }
+      .btn-cancel:hover { background: #cfd8dc; }
+
+      /* Read-only state for fields */
+      .horse-details input[readonly] {
+        background: #f5f5f5;
+        border-color: #e0e0e0;
+        cursor: default;
+      }
+      .horse-details input[readonly]:hover {
+        background: #f5f5f5;
+        border-color: #e0e0e0;
+      }
+      .editable[contenteditable="false"] {
+        background: #f5f5f5;
+        border-color: #e0e0e0;
+        cursor: default;
+      }
+      .editable[contenteditable="false"]:hover {
+        background: #f5f5f5;
+        border-color: #e0e0e0;
+      }
+
+      /* Status toast */
+      .save-toast {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #fff;
+        z-index: 999;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        opacity: 0;
+        transform: translateY(10px);
+        transition: all 0.3s;
+      }
+      .save-toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
     </style>
 </head>
 <body>
@@ -292,10 +369,16 @@
             </div>
             <div class="horse-notes-col">
                 <h2>Notes</h2>
-                <div class="editable" id="horseNotes" contenteditable="true">Loading notes...</div>
+                <div class="editable" id="horseNotes" contenteditable="false">Loading notes...</div>
             </div>
         </div>
+        <div class="edit-bar">
+          <button class="btn-edit" id="btnEdit" onclick="enableEditing()"><i class="bi bi-pencil"></i> Edit</button>
+          <button class="btn-save" id="btnSave" onclick="saveChanges()" style="display:none;"><i class="bi bi-check-lg"></i> Save Changes</button>
+          <button class="btn-cancel" id="btnCancel" onclick="cancelEditing()" style="display:none;"><i class="bi bi-x-lg"></i> Cancel</button>
+        </div>
     </div>
+    <div class="save-toast" id="saveToast"></div>
 
     <div class="section">
         <h2>Treatments Table</h2>
@@ -351,6 +434,8 @@
 
     <script>
       const API_URL = "http://127.0.0.1:5000/horses";
+      let currentHorseId = null;   // MongoDB _id
+      let originalValues = {};     // snapshot before editing
 
       // Read horse name from URL and set the title + image
       const params = new URLSearchParams(window.location.search);
@@ -411,6 +496,7 @@
             });
             if (horse) {
               console.log('Horse data from MongoDB:', horse);
+              currentHorseId = horse._id;  // store for PUT
 
               // Helper: format date strings nicely
               function fmtDate(val) {
@@ -440,6 +526,9 @@
               document.getElementById('detailBehavior').value = horse.behavior_notes || '—';
               document.getElementById('detailGrooming').value = horse.grooming_days || '—';
               document.getElementById('detailDeceased').value = horse.is_deceased ? ('Yes — ' + fmtDate(horse.date_of_death)) : 'No';
+
+              // Set all inputs to readonly initially
+              setFieldsReadonly(true);
             } else {
               document.getElementById('horseNotes').textContent = 'Horse not found in database.';
             }
@@ -448,6 +537,104 @@
             console.error('Error fetching horse data:', err);
             document.getElementById('horseNotes').textContent = 'Could not load notes. Is the Flask server running?';
           });
+      }
+
+      // ── Edit / Save helpers ──
+
+      function getEditableFields() {
+        return document.querySelectorAll('.horse-details input');
+      }
+
+      function setFieldsReadonly(readonly) {
+        getEditableFields().forEach(input => {
+          if (readonly) input.setAttribute('readonly', '');
+          else input.removeAttribute('readonly');
+        });
+        document.getElementById('horseNotes').contentEditable = !readonly;
+      }
+
+      function snapshotValues() {
+        originalValues = {};
+        getEditableFields().forEach(input => {
+          originalValues[input.id] = input.value;
+        });
+        originalValues['horseNotes'] = document.getElementById('horseNotes').textContent;
+      }
+
+      function restoreValues() {
+        getEditableFields().forEach(input => {
+          if (originalValues[input.id] !== undefined) input.value = originalValues[input.id];
+        });
+        document.getElementById('horseNotes').textContent = originalValues['horseNotes'] || '';
+      }
+
+      function enableEditing() {
+        snapshotValues();
+        setFieldsReadonly(false);
+        document.getElementById('btnEdit').style.display = 'none';
+        document.getElementById('btnSave').style.display = 'inline-flex';
+        document.getElementById('btnCancel').style.display = 'inline-flex';
+      }
+
+      function cancelEditing() {
+        restoreValues();
+        setFieldsReadonly(true);
+        document.getElementById('btnEdit').style.display = 'inline-flex';
+        document.getElementById('btnSave').style.display = 'none';
+        document.getElementById('btnCancel').style.display = 'none';
+      }
+
+      async function saveChanges() {
+        if (!currentHorseId) {
+          showToast('Cannot save — horse ID not found.', '#c62828');
+          return;
+        }
+
+        // Gather updated values
+        const updatedData = {
+          breed: document.getElementById('detailBreed').value.trim(),
+          gender: document.getElementById('detailGender').value.trim(),
+          birth_year: document.getElementById('detailBirthYear').value.trim(),
+          pasture: document.getElementById('detailPasture').value.trim(),
+          arrival_date: document.getElementById('detailArrival').value.trim(),
+          last_farrier_date: document.getElementById('detailFarrier').value.trim(),
+          farrier_notes: document.getElementById('detailFarrierNotes').value.trim(),
+          medical_notes: document.getElementById('detailMedical').value.trim(),
+          behavior_notes: document.getElementById('detailBehavior').value.trim(),
+          grooming_days: document.getElementById('detailGrooming').value.trim(),
+          general_notes: document.getElementById('horseNotes').textContent.trim(),
+          user_email: localStorage.getItem('user_email') || 'Unknown',
+          Name: horseName
+        };
+
+        try {
+          const res = await fetch(`${API_URL}/${currentHorseId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+          });
+          if (res.ok) {
+            showToast('Changes saved successfully!', '#388e3c');
+            setFieldsReadonly(true);
+            document.getElementById('btnEdit').style.display = 'inline-flex';
+            document.getElementById('btnSave').style.display = 'none';
+            document.getElementById('btnCancel').style.display = 'none';
+          } else {
+            const err = await res.json();
+            showToast('Error: ' + (err.error || 'Could not save.'), '#c62828');
+          }
+        } catch (e) {
+          console.error('Save error:', e);
+          showToast('Server error. Is the Flask server running?', '#c62828');
+        }
+      }
+
+      function showToast(msg, bgColor) {
+        const toast = document.getElementById('saveToast');
+        toast.textContent = msg;
+        toast.style.background = bgColor;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
       }
     </script>
 </body>

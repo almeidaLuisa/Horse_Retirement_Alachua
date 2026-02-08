@@ -75,6 +75,16 @@ def register():
         }
 
         user_logins.insert_one(new_user)
+
+        # Log to audit trail
+        audit_collection.insert_one({
+            'action': 'REGISTER',
+            'table': 'User_Logins',
+            'user_id': email,
+            'details': {'email': email, 'name': first_name + ' ' + last_name},
+            'timestamp': datetime.utcnow()
+        })
+
         return jsonify({'message': 'Account created successfully!'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -98,6 +108,15 @@ def login():
             {'_id': user['_id']},
             {'$set': {'last_login': datetime.utcnow()}}
         )
+
+        # Log to audit trail
+        audit_collection.insert_one({
+            'action': 'LOGIN',
+            'table': 'User_Logins',
+            'user_id': email,
+            'details': {'email': email, 'name': user['first_name'] + ' ' + user['last_name']},
+            'timestamp': datetime.utcnow()
+        })
 
         return jsonify({
             'message': 'Login successful',
@@ -147,6 +166,86 @@ def get_horses():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/horses', methods=['POST'])
+def add_horse():
+    try:
+        data = request.json
+        if not data.get('Name') and not data.get('name'):
+            return jsonify({'error': 'Horse name is required'}), 400
+
+        result = horse_collection.insert_one(data)
+        horse_name = data.get('Name') or data.get('name') or 'Unknown'
+
+        # Log to audit trail
+        audit_collection.insert_one({
+            'action': 'ADD_HORSE',
+            'table': 'Horse_Tables',
+            'user_id': data.get('user_email', 'Unknown'),
+            'details': {'horse_name': horse_name},
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Horse added', 'id': str(result.inserted_id)}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/horses/<id>', methods=['PUT'])
+def update_horse(id):
+    try:
+        data = request.json
+        user_email = data.pop('user_email', 'Unknown')
+
+        result = horse_collection.update_one(
+            {'_id': ObjectId(id)},
+            {'$set': data}
+        )
+
+        horse_name = data.get('Name') or data.get('name') or 'Unknown'
+
+        # Log to audit trail
+        audit_collection.insert_one({
+            'action': 'UPDATE_HORSE',
+            'table': 'Horse_Tables',
+            'user_id': user_email,
+            'details': {'horse_name': horse_name, 'fields_changed': list(data.keys())},
+            'timestamp': datetime.utcnow()
+        })
+
+        if result.matched_count == 0:
+            return jsonify({'error': 'Horse not found'}), 404
+        return jsonify({'message': 'Horse updated'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/horses/<id>', methods=['DELETE'])
+def delete_horse(id):
+    try:
+        user_email = request.args.get('user_email', 'Unknown')
+
+        # Get horse name before deleting
+        horse = horse_collection.find_one({'_id': ObjectId(id)})
+        horse_name = 'Unknown'
+        if horse:
+            horse_name = horse.get('Name') or horse.get('name') or 'Unknown'
+
+        result = horse_collection.delete_one({'_id': ObjectId(id)})
+
+        if result.deleted_count == 0:
+            return jsonify({'error': 'Horse not found'}), 404
+
+        # Log to audit trail
+        audit_collection.insert_one({
+            'action': 'DELETE_HORSE',
+            'table': 'Horse_Tables',
+            'user_id': user_email,
+            'details': {'horse_name': horse_name},
+            'timestamp': datetime.utcnow()
+        })
+
+        return jsonify({'message': 'Horse deleted'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ==========================================
 #      SECTION 2.5: AUDIT TRAIL
 # ==========================================
@@ -154,7 +253,10 @@ def get_horses():
 @app.route('/api/audits', methods=['GET'])
 def get_audits():
     try:
-        cursor = audit_collection.find().sort("timestamp", -1).limit(50)
+        limit = request.args.get('limit', 50, type=int)
+        cursor = audit_collection.find().sort("timestamp", -1)
+        if limit > 0:
+            cursor = cursor.limit(limit)
         audits = [format_doc(doc) for doc in cursor]
         return jsonify(audits), 200
     except Exception as e:

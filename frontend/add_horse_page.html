@@ -263,7 +263,8 @@
           Gender: document.getElementById('gender').value,
           'Field Home': document.getElementById('pasture').value.trim(),
           'Date of Birth': document.getElementById('dob').value,
-          Notes: document.getElementById('notes').value.trim()
+          Notes: document.getElementById('notes').value.trim(),
+          user_email: localStorage.getItem('user_email') || 'Unknown'
         };
 
         try {

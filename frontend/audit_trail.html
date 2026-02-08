@@ -232,7 +232,7 @@
 
       async function loadAudits() {
         try {
-          const res = await fetch(`${API_URL}/api/audits`);
+          const res = await fetch(`${API_URL}/api/audits?limit=0`);
           const audits = await res.json();
 
           const container = document.getElementById('auditList');
