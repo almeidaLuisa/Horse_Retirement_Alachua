@@ -481,13 +481,23 @@
 
             // Build details string
             let detailStr = audit.action || 'Unknown action';
+            let changesHtml = '';
             if (audit.details) {
               if (typeof audit.details === 'string') {
                 detailStr += ' — ' + audit.details;
-              } else if (audit.details.email) {
-                detailStr += ' — ' + audit.details.email;
               } else if (audit.details.horse_name) {
                 detailStr += ' — ' + audit.details.horse_name;
+              } else if (audit.details.email) {
+                detailStr += ' — ' + audit.details.email;
+              }
+              // Show field changes for updates
+              if (audit.details.changes && audit.details.changes.length) {
+                changesHtml = '<div style="margin-top:4px;font-size:0.78rem;color:#546e7a;">' +
+                  audit.details.changes.map(c =>
+                    '<span style="display:inline-block;background:#f5f5f5;border-radius:4px;padding:1px 6px;margin:2px 2px 0 0;"><b>' + c.field + '</b>: ' +
+                    '<span style="color:#c62828;text-decoration:line-through;">' + c.old + '</span> → ' +
+                    '<span style="color:#388e3c;">' + c.new + '</span></span>'
+                  ).join(' ') + '</div>';
               }
             }
 
@@ -496,6 +506,7 @@
               <div class="item-icon" style="${iconBg}"><i class="${iconClass}"></i></div>
               <div class="item-text">
                 <div class="title">${detailStr}</div>
+                ${changesHtml}
                 <div class="meta">
                   ${audit.table ? 'Table: ' + audit.table + ' • ' : ''}${timeStr}
                   ${audit.user_id ? ' • User: ' + audit.user_id : ''}

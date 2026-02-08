@@ -195,24 +195,50 @@ def update_horse(id):
         data = request.json
         user_email = data.pop('user_email', 'Unknown')
 
+        # Get old document to compare changes
+        old_doc = horse_collection.find_one({'_id': ObjectId(id)})
+        if not old_doc:
+            return jsonify({'error': 'Horse not found'}), 404
+
+        horse_name = data.get('Name') or data.get('name') or old_doc.get('name') or old_doc.get('Name') or 'Unknown'
+
+        # Build a list of actual changes (old → new)
+        changes = []
+        for key, new_val in data.items():
+            if key in ('Name', '_id'):
+                continue
+            old_val = old_doc.get(key, '')
+            # Normalize both to strings for comparison
+            old_str = str(old_val).strip() if old_val else '—'
+            new_str = str(new_val).strip() if new_val else '—'
+            if old_str != new_str:
+                changes.append({
+                    'field': key,
+                    'old': old_str,
+                    'new': new_str
+                })
+
+        # Only update if something actually changed
+        if not changes:
+            return jsonify({'message': 'No changes detected'}), 200
+
         result = horse_collection.update_one(
             {'_id': ObjectId(id)},
             {'$set': data}
         )
 
-        horse_name = data.get('Name') or data.get('name') or 'Unknown'
-
-        # Log to audit trail
+        # Log to audit trail with detailed changes
         audit_collection.insert_one({
             'action': 'UPDATE_HORSE',
             'table': 'Horse_Tables',
             'user_id': user_email,
-            'details': {'horse_name': horse_name, 'fields_changed': list(data.keys())},
+            'details': {
+                'horse_name': horse_name,
+                'changes': changes
+            },
             'timestamp': datetime.utcnow()
         })
 
-        if result.matched_count == 0:
-            return jsonify({'error': 'Horse not found'}), 404
         return jsonify({'message': 'Horse updated'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500

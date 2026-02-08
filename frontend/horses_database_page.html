@@ -3,42 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horse Manager - Backend Admin</title>
+    <title>Horse Database — The Retirement Home for Horses, Inc.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: #2c3e50; text-align: center; }
+        :root {
+          --green-light: #e8f5e9;
+          --green-mid:   #81c784;
+          --green-dark:  #388e3c;
+          --blue-light:  #e0f7fa;
+          --blue-dark:   #00796b;
+          --text-dark:   #263238;
+          --text-muted:  #546e7a;
+          --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        body { font-family: 'Nunito', sans-serif; background: linear-gradient(170deg, var(--green-light) 0%, #f5faf6 40%, var(--blue-light) 100%); padding: 20px; min-height: 100vh; color: var(--text-dark); }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: var(--card-shadow); }
+        h1 { color: var(--green-dark); text-align: center; font-weight: 800; }
+        h2 { color: var(--text-dark); font-weight: 700; }
         
         /* Form Styles */
         .form-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; padding: 20px; background: #eef2f5; border-radius: 8px; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-primary { background-color: #3498db; color: white; }
-        .btn-success { background-color: #2ecc71; color: white; }
+        button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-family: 'Nunito', sans-serif; font-size: 0.9rem; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, var(--green-dark), var(--blue-dark)); color: white; border-radius: 10px; font-size: 0.92rem; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56,142,60,0.3); }
+        .btn-success { background: white; color: var(--blue-dark); border: 2px solid var(--blue-dark); border-radius: 10px; font-size: 0.92rem; }
+        .btn-success:hover { background: var(--blue-light); transform: translateY(-1px); }
         .btn-danger { background-color: #e74c3c; color: white; }
         .btn-secondary { background-color: #95a5a6; color: white; }
 
         /* Table Styles */
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #2c3e50; color: white; }
-        tr:hover { background-color: #f1f1f1; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eceff1; font-size: 0.92rem; }
+        th { background: linear-gradient(90deg, var(--green-dark), var(--blue-dark)); color: white; font-weight: 700; }
+        tr:hover { background-color: var(--green-light); }
         
         .action-buttons { display: flex; gap: 5px; }
-        .status-msg { margin-top: 10px; padding: 10px; border-radius: 4px; display: none; }
+        .status-msg { margin: 1rem 0; padding: 12px 16px; border-radius: 10px; display: none; font-weight: 600; font-size: 0.9rem; }
 
         /* Search bar */
         .search-wrap { margin: 15px 0; position: relative; }
         .search-wrap input {
             width: 100%; padding: 12px 12px 12px 40px;
-            border: 2px solid #ddd; border-radius: 8px;
-            font-size: 1rem; box-sizing: border-box;
+            border: 2px solid var(--green-mid); border-radius: 10px;
+            font-size: 0.95rem; box-sizing: border-box; font-family: 'Nunito', sans-serif;
             transition: border-color 0.2s;
         }
-        .search-wrap input:focus { outline: none; border-color: #3498db; }
+        .search-wrap input:focus { outline: none; border-color: var(--blue-dark); }
         .search-wrap .search-icon {
-            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-            font-size: 1.1rem; color: #95a5a6;
+            position: absolute; left: 12px; top: 12px;
+            font-size: 1.1rem; color: var(--text-muted); line-height: 1;
         }
         .search-count { font-size: 0.85rem; color: #7f8c8d; margin-top: 5px; }
     </style>
@@ -47,20 +62,20 @@
 
 <div class="container">
     <div style="margin-bottom: 15px;">
-        <a href="dashboard_page.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:#2c3e50;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;font-size:0.9rem;">&#8592; Back to Dashboard</a>
+        <a href="dashboard_page.html" style="display:inline-flex;align-items:center;gap:6px;padding:8px 18px;background:linear-gradient(90deg,var(--green-dark),var(--blue-dark));color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.9rem;"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
     </div>
-    <h1>🐴 Retirement Home Horse Database</h1>
+    <h1>🐴 The Retirement Home for Horses, Inc.</h1>
     
     <div id="statusMsg" class="status-msg"></div>
 
-    <div style="display:flex; gap:10px; margin-bottom:15px;">
-        <a href="#" onclick="if(!checkAdmin())return false;window.location.href='add_horse_page.html';" class="btn-primary" style="display:inline-flex;align-items:center;gap:6px;padding:10px 22px;text-decoration:none;font-size:1rem;">➕ Add Horse</a>
-        <button class="btn-success" onclick="fetchHorses()">🔄 Refresh List</button>
+    <div style="display:flex; gap:10px; margin-bottom:1.5rem;">
+        <a href="#" onclick="if(!checkAdmin())return false;window.location.href='add_horse_page.html';" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;text-decoration:none;font-size:0.92rem;"><i class="bi bi-plus-circle-fill"></i> Add Horse</a>
+        <button class="btn-success" onclick="fetchHorses()" style="display:inline-flex;align-items:center;gap:8px;"><i class="bi bi-arrow-clockwise"></i> Refresh List</button>
     </div>
 
     <h2>Current Herd</h2>
     <div class="search-wrap">
-        <span class="search-icon">🔍</span>
+        <i class="bi bi-search search-icon"></i>
         <input type="text" id="searchInput" placeholder="Search by name, breed, pasture, notes..." autocomplete="off" />
         <div class="search-count" id="searchCount"></div>
     </div>
@@ -176,7 +191,7 @@
     function checkAdmin() {
       const role = (localStorage.getItem('user_role') || '').toLowerCase();
       if (role !== 'admin') {
-        showStatus("🔒 You don't have permission to do this.", "#c62828");
+        showStatus("🔒 You don't have permission to do this.", "rgba(198, 40, 40, 0.85)");
         return false;
       }
       return true;
