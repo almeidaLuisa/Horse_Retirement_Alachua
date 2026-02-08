@@ -360,9 +360,42 @@
         document.title = horseName + ' — Horse Retirement Alachua';
 
         // Map the horse image from the images folder (name.jpg)
+        // Special name→filename mapping for mismatches
+        const imageNameMap = {
+          'Ms. Miami': 'Miss Miami & Viva Slew',
+          'MIss Cortina': 'Miss Cortina',
+          'Champaigne': 'Champagne',
+          'Echo (Echoing Wind)': 'Echoing Wind',
+          'GI (Grand Illustrator)': 'G.I.',
+          'Coco': 'Coco&Fancy',
+          'Fancy': 'Fancy&Coco',
+          'Commander': 'Commander & Hope',
+          'Freedom': 'Freedom & Inky',
+          'Emmett': 'Emmett & June',
+          'June': 'June & Emmett',
+          'Orion (2 hind, left front white)': 'Orion & Tut',
+          'Tut': 'Tut & Orion',
+          'Enchanted Dancer': 'Enchnted Dancer',
+        };
+
+        // Clean up name: strip parenthetical suffixes, trim
+        function getImageName(name) {
+          if (imageNameMap[name]) return imageNameMap[name];
+          // Strip parenthetical like "(Don't poke the bear)" or "(new)"
+          let clean = name.replace(/\s*\(.*?\)\s*$/, '').trim();
+          // Strip suffixes like "II"
+          let noSuffix = clean.replace(/\s+II\s*$/, '').trim();
+          return clean;
+        }
+
         const img = document.getElementById('horseImage');
-        img.src = 'images/' + horseName + '.jpg';
+        img.src = 'images/' + getImageName(horseName) + '.jpg';
         img.alt = horseName;
+        // Show placeholder on error (no matching image file)
+        img.onerror = function() {
+          this.style.display = 'none';
+          this.parentElement.innerHTML = '<div style="text-align:center;color:#546e7a;font-size:0.85rem;padding:1rem;"><i class="bi bi-camera-fill" style="font-size:3rem;color:#81c784;display:block;margin-bottom:0.5rem;"></i>No photo available</div>';
+        };
 
         // Fetch this horse's data from the API and populate Notes
         fetch(API_URL)
