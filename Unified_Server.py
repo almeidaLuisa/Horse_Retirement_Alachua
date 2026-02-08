@@ -366,7 +366,8 @@ def change_password():
 @app.route('/horses', methods=['GET'])
 def get_horses():
     try:
-        cursor = horse_collection.find().sort("Name", 1)
+        # Sort by lowercase 'name' (primary schema) then fallback 'Name'
+        cursor = horse_collection.find().sort("name", 1)
         horses = [format_doc(doc) for doc in cursor]
         return jsonify(horses), 200
     except Exception as e:
@@ -384,7 +385,22 @@ def add_horse():
 
         # Extract user_email before inserting (not horse data)
         user_email = data.pop('user_email', 'Unknown')
-        horse_name = data.get('Name') or data.get('name') or 'Unknown'
+        
+        # Normalize: if data has capitalized keys (old format), convert to lowercase schema
+        if 'Name' in data and 'name' not in data:
+            data['name'] = data.pop('Name')
+        if 'Breed' in data and 'breed' not in data:
+            data['breed'] = data.pop('Breed')
+        if 'Gender' in data and 'gender' not in data:
+            data['gender'] = data.pop('Gender')
+        if 'Field Home' in data and 'pasture' not in data:
+            data['pasture'] = data.pop('Field Home')
+        if 'Notes' in data and 'general_notes' not in data:
+            data['general_notes'] = data.pop('Notes')
+        if 'Date of Birth' in data:
+            data.pop('Date of Birth')  # birth_year is used instead
+        
+        horse_name = data.get('name') or data.get('Name') or 'Unknown'
 
         result = horse_collection.insert_one(data)
         print(f"✅ Horse '{horse_name}' inserted with _id: {result.inserted_id}")

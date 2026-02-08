@@ -262,16 +262,33 @@
         const photoPreview = document.getElementById('photoPreview');
         const photoData = (photoPreview.style.display !== 'none' && photoPreview.src) ? photoPreview.src : '';
 
+        // Use the SAME field names as the existing MongoDB schema (from Csv_Magodb_transfer.py)
         const horseData = {
-          Name: name,
-          Breed: document.getElementById('breed').value.trim(),
-          Gender: document.getElementById('gender').value,
-          'Field Home': document.getElementById('pasture').value.trim(),
-          'Date of Birth': document.getElementById('dob').value,
-          Notes: document.getElementById('notes').value.trim(),
+          name: name,
+          breed: document.getElementById('breed').value.trim(),
+          gender: document.getElementById('gender').value,
+          pasture: document.getElementById('pasture').value.trim(),
+          birth_year: null,
+          general_notes: document.getElementById('notes').value.trim(),
           photo: photoData,
+          arrival_date: null,
+          last_farrier_date: null,
+          farrier_notes: null,
+          behavior_notes: null,
+          medical_notes: null,
+          grooming_days: null,
+          is_deceased: false,
+          date_of_death: null,
+          datetime_last_updated: new Date().toISOString(),
+          last_updated_by: localStorage.getItem('user_email') || 'Unknown',
           user_email: localStorage.getItem('user_email') || 'Unknown'
         };
+
+        // If date of birth provided, calculate birth_year
+        const dob = document.getElementById('dob').value;
+        if (dob) {
+          horseData.birth_year = new Date(dob).getFullYear();
+        }
 
         try {
           console.log('Sending horse data to server:', Object.keys(horseData));
