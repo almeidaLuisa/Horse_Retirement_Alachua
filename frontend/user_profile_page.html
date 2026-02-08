@@ -345,8 +345,10 @@
         noBtn.className  = 'notif-btn' + (choice === 'no'  ? ' active-no'  : '');
       }
 
-      // Save → redirect to dashboard
+      // Save → save username to localStorage, then redirect to dashboard
       function saveChanges() {
+        const username = usernameInput.value || 'User';
+        localStorage.setItem('currentUsername', username);
         window.location.href = 'dashboard_page.html';
       }
     </script>
