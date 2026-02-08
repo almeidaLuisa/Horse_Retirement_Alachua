@@ -10,7 +10,7 @@ collection = db["Horse_Tables"]
 
 documents = []
 
-with open("people.csv", newline="", encoding="utf-8") as csvfile:
+with open("Horse_Table.csv", newline="", encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         # Convert types if needed
