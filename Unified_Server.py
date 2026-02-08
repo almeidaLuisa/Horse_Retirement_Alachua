@@ -22,7 +22,7 @@ CORS(app)
 SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'luisalmeida0106@gmail.com')
 SMTP_APP_PASSWORD = os.environ.get('SMTP_APP_PASSWORD', 'oqrx kaip oppt pmtt')
 SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 587
+SMTP_PORT = 465
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:5000')  # In production, set to your Render URL
 
 # Database Connection
@@ -82,10 +82,7 @@ def send_verification_email(to_email, first_name, token):
     msg.attach(MIMEText(html, 'html'))
     
     try:
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
             server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
         print(f"✅ Verification email sent to {to_email}")
@@ -232,10 +229,7 @@ def send_change_notification(action, user_id, details):
                     msg['To'] = user['email']
                     msg.attach(MIMEText(html, 'html'))
 
-                    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-                        server.ehlo()
-                        server.starttls()
-                        server.ehlo()
+                    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
                         server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
                         server.sendmail(SMTP_EMAIL, user['email'], msg.as_string())
                     print(f"📧 Notification sent to {user['email']} for {action}")
@@ -473,10 +467,7 @@ def request_password_reset():
 
         msg.attach(MIMEText(html, 'html'))
 
-        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            server.ehlo()
-            server.starttls()
-            server.ehlo()
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
             server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
             server.sendmail(SMTP_EMAIL, email, msg.as_string())
 
@@ -484,7 +475,7 @@ def request_password_reset():
         return jsonify({'message': 'If that email is registered, a reset link has been sent.'}), 200
     except Exception as e:
         print(f"❌ Password reset request error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Unable to send reset email. Please try again later.'}), 500
 
 
 @app.route('/api/auth/reset-password', methods=['POST'])
