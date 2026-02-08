@@ -1,5 +1,9 @@
 flask
-pymongo
 flask-cors
+pymongo
 dnspython
 certifi
+pyjwt
+pandas
+werkzeug
+requests

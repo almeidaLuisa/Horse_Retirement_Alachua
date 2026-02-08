@@ -53,6 +53,7 @@
 			(function () {
 				const form = document.getElementById('loginForm');
 				const errorEl = document.getElementById('loginError');
+				const submitBtn = form.querySelector('button[type="submit"]');
 
 				function setError(msg) {
 					if (!msg) {
@@ -64,12 +65,24 @@
 					errorEl.textContent = msg;
 				}
 
+				function setLoading(isLoading) {
+					submitBtn.disabled = isLoading;
+					submitBtn.textContent = isLoading ? 'Logging in...' : 'Login';
+				}
+
 				form.addEventListener('submit', async (e) => {
 					e.preventDefault();
 					setError('');
+					setLoading(true);
 
 					const email = document.getElementById('email').value.trim();
 					const password = document.getElementById('password').value;
+
+					if (!email || !password) {
+						setError('Email and password are required.');
+						setLoading(false);
+						return;
+					}
 
 					try {
 						const res = await fetch('/api/auth/login', {
@@ -81,13 +94,21 @@
 						const data = await res.json().catch(() => ({}));
 						if (!res.ok) {
 							setError(data?.error || 'Login failed.');
+							setLoading(false);
 							return;
 						}
 
+						// Store token and user info
 						localStorage.setItem('authToken', data.token);
-						window.location.href = 'home_page.html';
-					} catch {
+						localStorage.setItem('user', JSON.stringify(data.user));
+						
+						// Redirect to dashboard
+						setTimeout(() => {
+							window.location.href = 'home_page.html';
+						}, 500);
+					} catch (error) {
 						setError('Network error. Is the server running?');
+						setLoading(false);
 					}
 				});
 			})();
