@@ -271,24 +271,24 @@
                 <input id="detailBreed" type="text" value="—" />
                 <label>Gender</label>
                 <input id="detailGender" type="text" value="—" />
-                <label>Age</label>
-                <input id="detailAge" type="text" value="—" />
-                <label>Field Home</label>
-                <input id="detailFieldHome" type="text" value="—" />
-                <label>Medical</label>
-                <input id="detailMedical" type="text" value="—" />
-                <label>RHH Arrival</label>
+                <label>Birth Year</label>
+                <input id="detailBirthYear" type="text" value="—" />
+                <label>Pasture</label>
+                <input id="detailPasture" type="text" value="—" />
+                <label>Arrival Date</label>
                 <input id="detailArrival" type="text" value="—" />
-                <label>Field of Dreams</label>
-                <input id="detailFOD" type="text" value="—" />
                 <label>Last Farrier</label>
                 <input id="detailFarrier" type="text" value="—" />
                 <label>Farrier Notes</label>
                 <input id="detailFarrierNotes" type="text" value="—" />
-                <label>Treatment</label>
-                <input id="detailTreatment" type="text" value="—" />
-                <label>Treatment Date</label>
-                <input id="detailTreatmentDate" type="text" value="—" />
+                <label>Medical Notes</label>
+                <input id="detailMedical" type="text" value="—" />
+                <label>Behavior Notes</label>
+                <input id="detailBehavior" type="text" value="—" />
+                <label>Grooming Days</label>
+                <input id="detailGrooming" type="text" value="—" />
+                <label>Deceased</label>
+                <input id="detailDeceased" type="text" value="—" />
             </div>
             <div class="horse-notes-col">
                 <h2>Notes</h2>
@@ -373,40 +373,40 @@
           .then(horses => {
             // Find horse by name (case-insensitive, trimmed)
             const horse = horses.find(h => {
-              const dbName = (h.Name || h.name || '').trim().toLowerCase();
+              const dbName = (h.name || h.Name || '').trim().toLowerCase();
               return dbName === horseName.trim().toLowerCase();
             });
             if (horse) {
-              // Log all available keys so we can see what MongoDB returns
               console.log('Horse data from MongoDB:', horse);
-              console.log('Available keys:', Object.keys(horse));
 
-              // Helper: try multiple possible field names
-              function getField(...keys) {
-                for (const key of keys) {
-                  if (horse[key] !== undefined && horse[key] !== null && horse[key] !== '') {
-                    return horse[key];
-                  }
+              // Helper: format date strings nicely
+              function fmtDate(val) {
+                if (!val) return '—';
+                const s = String(val);
+                // Try to parse ISO date
+                const d = new Date(s);
+                if (!isNaN(d.getTime())) {
+                  return d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
                 }
-                return '—';
+                return s;
               }
 
-              // Populate notes
-              const notes = getField('Notes', 'notes', 'general_notes');
-              document.getElementById('horseNotes').textContent = (notes && notes !== '—') ? notes : 'No notes available.';
+              // Populate notes (MongoDB field: general_notes)
+              const notes = horse.general_notes || horse.Notes || '';
+              document.getElementById('horseNotes').textContent = notes || 'No notes available.';
 
-              // Populate detail fields from MongoDB (trying multiple possible key names)
-              document.getElementById('detailBreed').value = getField('Breed', 'breed');
-              document.getElementById('detailGender').value = getField('Gender', 'gender', 'Sex', 'sex');
-              document.getElementById('detailAge').value = getField('Age (in 2026)', 'Age', 'age');
-              document.getElementById('detailFieldHome').value = getField('Field Home', 'field_home', 'pasture', 'Pasture', 'location');
-              document.getElementById('detailMedical').value = getField('Medical Conditions', 'medical_conditions', 'Medical', 'medical');
-              document.getElementById('detailArrival').value = getField('RHH Arrival', 'rhh_arrival', 'arrival', 'Arrival');
-              document.getElementById('detailFOD').value = getField('Field of Dreams', 'field_of_dreams');
-              document.getElementById('detailFarrier').value = getField('Last Farrier Date', 'last_farrier_date', 'Farrier Date');
-              document.getElementById('detailFarrierNotes').value = getField('Farrier notes', 'farrier_notes', 'Farrier Notes');
-              document.getElementById('detailTreatment').value = getField('Treatment Description', 'treatment_description', 'Treatment');
-              document.getElementById('detailTreatmentDate').value = getField('Treatment Date', 'treatment_date');
+              // Populate detail fields using exact MongoDB field names
+              document.getElementById('detailBreed').value = horse.breed || horse.Breed || '—';
+              document.getElementById('detailGender').value = horse.gender || horse.Gender || '—';
+              document.getElementById('detailBirthYear').value = horse.birth_year || '—';
+              document.getElementById('detailPasture').value = horse.pasture || horse['Field Home'] || '—';
+              document.getElementById('detailArrival').value = fmtDate(horse.arrival_date || horse['RHH Arrival']);
+              document.getElementById('detailFarrier').value = fmtDate(horse.last_farrier_date || horse['Last Farrier Date']);
+              document.getElementById('detailFarrierNotes').value = horse.farrier_notes || '—';
+              document.getElementById('detailMedical').value = horse.medical_notes || '—';
+              document.getElementById('detailBehavior').value = horse.behavior_notes || '—';
+              document.getElementById('detailGrooming').value = horse.grooming_days || '—';
+              document.getElementById('detailDeceased').value = horse.is_deceased ? ('Yes — ' + fmtDate(horse.date_of_death)) : 'No';
             } else {
               document.getElementById('horseNotes').textContent = 'Horse not found in database.';
             }
