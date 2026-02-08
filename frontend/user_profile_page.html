@@ -146,15 +146,15 @@
       // 2. FETCH DATA
       async function loadProfile() {
           try {
-              const response = await fetch(${API_URL}?email=${userEmail});
+              const response = await fetch(`${API_URL}?email=${userEmail}`);
               const data = await response.json();
 
               if (response.ok) {
                   // Welcome Message
                   const displayName = data.first_name ? 
-                      ${data.first_name} ${data.last_name} : 
+                      `${data.first_name} ${data.last_name}` : 
                       data.email;
-                  document.getElementById('welcomeMsg').innerText = Welcome, ${displayName}!;
+                  document.getElementById('welcomeMsg').innerText = `Welcome, ${displayName}!`;
                   
                   // Populate Fields
                   document.getElementById('firstName').value = data.first_name || '';
