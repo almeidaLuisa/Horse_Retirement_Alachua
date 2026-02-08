@@ -19,7 +19,8 @@ try:
     db = client[DB_NAME]
     user_logins = db['User_Logins']
     horse_collection = db['Horse_Tables']
-    print(f"✅ CONNECTED TO: {DB_NAME} (User_Logins, Horse_Tables)")
+    audits_collection = db['Audits']
+    print(f"✅ CONNECTED TO: {DB_NAME} (User_Logins, Horse_Tables, Audits)")
 except Exception as e:
     print(f"❌ DATABASE CONNECTION FAILED: {e}")
 
@@ -157,6 +158,40 @@ def delete_horse(id):
         if result.deleted_count == 0:
             return jsonify({"error": "Horse not found"}), 404
         return jsonify({"message": "Horse Deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# --- AUDIT ROUTES ---
+
+@app.route('/audits', methods=['GET'])
+def get_audits():
+    try:
+        limit = request.args.get('limit', default=20, type=int)
+        cursor = audits_collection.find().sort("timestamp", -1).limit(limit)
+        audits = [format_doc(doc) for doc in cursor]
+        return jsonify(audits), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/audits', methods=['POST'])
+def log_audit():
+    try:
+        data = request.json
+        if not data.get('action'):
+            return jsonify({"error": "Action is required"}), 400
+        
+        audit_entry = {
+            'action': data.get('action'),
+            'horse_name': data.get('horse_name', ''),
+            'description': data.get('description', ''),
+            'user': data.get('user', 'System'),
+            'timestamp': datetime.utcnow()
+        }
+        
+        result = audits_collection.insert_one(audit_entry)
+        return jsonify({"message": "Audit logged", "id": str(result.inserted_id)}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
