@@ -8,47 +8,141 @@
     <title>Horse Retirement Alachua — Home</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
 
     <style>
+      :root {
+        /* Light green & blue palette */
+        --green-light: #e8f5e9;
+        --green-mid:   #81c784;
+        --green-dark:  #388e3c;
+        --blue-light:  #e0f2f1;
+        --blue-mid:    #4dd0e1;
+        --blue-dark:   #00796b;
+        --text-dark:   #263238;
+        --text-muted:  #546e7a;
+      }
 
+      * { box-sizing: border-box; }
+
+      body {
+        font-family: 'Nunito', sans-serif;
+        color: var(--text-dark);
+        background: linear-gradient(170deg, var(--green-light) 0%, #fff 40%, var(--blue-light) 100%);
+        padding-top: 76px;
+        margin: 0;
+      }
+
+      /* ── Navbar ── */
       .navbar-custom {
-        background: linear-gradient(90deg, #036ea3f2, #79aed4);
-        box-shadow: 0 6px 18px rgba(2,48,71,0.18);
-        backdrop-filter: blur(6px);
+        background: linear-gradient(90deg, var(--green-dark), var(--blue-dark));
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        backdrop-filter: blur(8px);
       }
 
       .navbar-custom .navbar-brand {
-        font-weight: 700;
-        letter-spacing: 0.4px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        font-size: 1.15rem;
       }
 
-      .nav-link { color: rgba(255,255,255,0.9) !important; }
+      .nav-link {
+        color: rgba(255,255,255,0.9) !important;
+        font-weight: 600;
+        transition: color 0.2s;
+      }
       .nav-link:hover { color: #fff !important; text-decoration: underline; }
 
-      .btn-cta { background: #ffd166; color: #003049; font-weight: 600; }
+      .btn-cta {
+        background: var(--green-mid);
+        color: #fff;
+        font-weight: 700;
+        border: none;
+        border-radius: 20px;
+        padding: 0.35rem 1.1rem;
+        transition: background 0.2s, transform 0.15s;
+      }
+      .btn-cta:hover {
+        background: var(--green-dark);
+        color: #fff;
+        transform: translateY(-1px);
+      }
 
       .navbar-collapse { box-shadow: 0 4px 18px rgba(0,0,0,0.06); }
 
-      .hero { 
-        padding: 6rem 1rem; 
-        background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('images/Abby.jpg') center/cover no-repeat;
+      /* ── Hero ── */
+      .hero {
+        padding: 5rem 1rem;
+        background: linear-gradient(rgba(0,60,40,0.55), rgba(0,80,80,0.55)), url('images/Abby.jpg') center/cover no-repeat;
         color: #fff;
-        min-height: 500px;
+        min-height: 520px;
         display: flex;
         align-items: center;
         justify-content: center;
+        text-align: center;
+      }
+      .hero h1 {
+        font-weight: 800;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.35);
+      }
+      .hero .lead {
+        font-size: 1.2rem;
+        opacity: 0.92;
       }
 
+      /* ── Section headings ── */
+      section h2, section h3 {
+        color: var(--blue-dark);
+        font-weight: 700;
+        position: relative;
+        display: inline-block;
+      }
+      section h2::after {
+        content: '';
+        display: block;
+        width: 50px;
+        height: 3px;
+        background: var(--green-mid);
+        border-radius: 2px;
+        margin-top: 6px;
+      }
+
+      /* ── Gallery ── */
       .gallery-img {
-        width:100%;
-        height:280px;
-        object-fit:cover;
-        border-radius:6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        width: 100%;
+        height: 280px;
+        object-fit: cover;
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.1);
         cursor: pointer;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+      .gallery-img:hover {
+        transform: scale(1.04);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18);
       }
 
       .gallery-container { text-align: center; margin-top: 2rem; }
+
+      .gallery-container .btn-primary {
+        background: var(--blue-dark);
+        border: none;
+        border-radius: 20px;
+        padding: 0.5rem 1.6rem;
+        font-weight: 600;
+        transition: background 0.2s;
+      }
+      .gallery-container .btn-primary:hover {
+        background: var(--green-dark);
+      }
+
+      /* ── Footer filler ── */
+      .filler {
+        height: 400px;
+        background: linear-gradient(180deg, #fff, var(--blue-light));
+        border-radius: 10px;
+        margin-top: 2rem;
+      }
     </style>
   </head>
 
@@ -104,7 +198,7 @@
           <button class="btn btn-primary" id="seeMoreBtn" style="display:none;">See More</button>
         </div>
 
-        <div style="height:900px; background:linear-gradient(180deg,#fff,#f1f7fb); border-radius:6px; margin-top:1rem;"></div>
+        <div class="filler"></div>
       </section>
     </main>
 
