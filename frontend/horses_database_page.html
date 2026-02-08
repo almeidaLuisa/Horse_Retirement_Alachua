@@ -141,7 +141,7 @@
             horses.forEach(horse => {
                 const horseName = horse.Name || horse.name || '?';
                 const row = `
-                    <tr style="cursor:pointer;" onclick="window.pasture.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
+                    <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
                         <td><strong>${horseName}</strong></td>
                         <td>${horse.Breed || horse.breed || '-'}</td>
                         <td>${horse.Gender || horse.gender || '-'}</td>
