@@ -18,6 +18,7 @@ app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32 MB max upload
 # Allow CORS for all domains
 CORS(app)
 
+
 # Email Configuration (use env vars in production, fallback to local defaults)
 SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'luisalmeida0106@gmail.com')
 SMTP_APP_PASSWORD = os.environ.get('SMTP_APP_PASSWORD', 'oqrx kaip oppt pmtt')
@@ -1126,6 +1127,9 @@ def toggle_daily_obs(id):
         return jsonify({"message": "Updated"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+
 
 
 if __name__ == '__main__':
