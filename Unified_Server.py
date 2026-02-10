@@ -23,7 +23,7 @@ SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'luisalmeida0106@gmail.com')
 SMTP_APP_PASSWORD = os.environ.get('SMTP_APP_PASSWORD', 'oqrx kaip oppt pmtt')
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 465
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://127.0.0.1:5000')  # In production, set to your Render URL
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://horse-retirement-house-alachua.onrender.com')  # In production, set to your Render URL
 
 # Database Connection
 URI = os.environ.get('MONGODB_URI', 'mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary')
