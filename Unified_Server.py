@@ -458,11 +458,7 @@ def request_password_reset():
         reset_url = f"{FRONTEND_URL}/reset_password.html?token={reset_token}"
         first_name = user.get('first_name', 'there')
 
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Reset your password — Retirement Home for Horses'
-        msg['From'] = SMTP_EMAIL
-        msg['To'] = email
-
+        subject = 'Reset your password — Retirement Home for Horses'
         html = f"""
         <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:2rem;">
             <div style="text-align:center;margin-bottom:1.5rem;">
@@ -483,14 +479,24 @@ def request_password_reset():
             <p style="color:#bbb;font-size:0.75rem;text-align:center;">Retirement Home for Horses, Inc. — Alachua, FL</p>
         </div>
         """
-
-        msg.attach(MIMEText(html, 'html'))
-
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
-            server.sendmail(SMTP_EMAIL, email, msg.as_string())
-
-        print(f"📧 Password reset email sent to {email}")
+        if not SENDGRID_API_KEY:
+            print("❌ SendGrid API key not set. Cannot send reset email.")
+            return jsonify({'message': 'If that email is registered, a reset link has been sent.'}), 200
+        try:
+            sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+            mail = Mail(
+                from_email=Email(FROM_EMAIL, "Retirement Home for Horses"),
+                to_emails=To(email),
+                subject=subject,
+                html_content=Content("text/html", html)
+            )
+            response = sg.send(mail)
+            if 200 <= response.status_code < 300:
+                print(f"📧 Password reset email sent to {email}")
+            else:
+                print(f"❌ Failed to send reset email: {response.status_code} {response.body}")
+        except Exception as e:
+            print(f"❌ Failed to send reset email: {e}")
         return jsonify({'message': 'If that email is registered, a reset link has been sent.'}), 200
     except Exception as e:
         print(f"❌ Password reset request error: {e}")
