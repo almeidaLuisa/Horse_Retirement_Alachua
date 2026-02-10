@@ -208,47 +208,53 @@ def send_change_notification(action, user_id, details):
                 try:
                     first_name = user.get('first_name', 'there')
                     html = f"""
-                    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:2rem;">
-                        <div style="text-align:center;margin-bottom:1.5rem;">
-                            <h1 style="color:#388e3c;margin:0;">🐴 Retirement Home for Horses</h1>
-                            <p style="color:#546e7a;font-size:0.9rem;">Change Notification</p>
+                    <div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:2rem;'>
+                        <div style='text-align:center;margin-bottom:1.5rem;'>
+                            <h1 style='color:#388e3c;margin:0;'>🐴 Retirement Home for Horses</h1>
+                            <p style='color:#546e7a;font-size:0.9rem;'>Change Notification</p>
                         </div>
-                        <p style="color:#333;font-size:1rem;">Hi {first_name},</p>
-                        <div style="background:#f5faf6;border:2px solid #81c784;border-radius:12px;padding:1.5rem;">
-                            <h2 style="color:#388e3c;margin-top:0;font-size:1.2rem;">{label}</h2>
-                            <p style="color:#555;font-size:0.9rem;margin:0.3rem 0;">
+                        <p style='color:#333;font-size:1rem;'>Hi {first_name},</p>
+                        <div style='background:#f5faf6;border:2px solid #81c784;border-radius:12px;padding:1.5rem;'>
+                            <h2 style='color:#388e3c;margin-top:0;font-size:1.2rem;'>{label}</h2>
+                            <p style='color:#555;font-size:0.9rem;margin:0.3rem 0;'>
                                 <strong>By:</strong> {user_id}<br>
                                 <strong>Time:</strong> {timestamp}
                             </p>
                             {changes_html}
                         </div>
-                        <div style="margin-top:1.5rem;text-align:center;">
-                            <a href="{FRONTEND_URL}/audit_trail.html" 
-                               style="background:linear-gradient(135deg,#388e3c,#00796b);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;font-size:0.9rem;display:inline-block;">
+                        <div style='margin-top:1.5rem;text-align:center;'>
+                            <a href='{FRONTEND_URL}/audit_trail.html' 
+                               style='background:linear-gradient(135deg,#388e3c,#00796b);color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;font-size:0.9rem;display:inline-block;'>
                                 View Full Audit Trail
                             </a>
                         </div>
-                        <hr style="border:none;border-top:1px solid #eee;margin:2rem 0;">
-                        <p style="color:#bbb;font-size:0.75rem;text-align:center;">
+                        <hr style='border:none;border-top:1px solid #eee;margin:2rem 0;'>
+                        <p style='color:#bbb;font-size:0.75rem;text-align:center;'>
                             You can change your notification preferences in your 
-                            <a href="{FRONTEND_URL}/user_profile_page.html" style="color:#79AED4;">profile settings</a>.<br>
+                            <a href='{FRONTEND_URL}/user_profile_page.html' style='color:#79AED4;'>profile settings</a>.<br>
                             Retirement Home for Horses, Inc. — Alachua, FL
                         </p>
                     </div>
                     """
-
-                    msg = MIMEMultipart('alternative')
-                    msg['Subject'] = f'{label} — Retirement Home for Horses'
-                    msg['From'] = SMTP_EMAIL
-                    msg['To'] = user['email']
-                    msg.attach(MIMEText(html, 'html'))
-
-                    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-                        server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
-                        server.sendmail(SMTP_EMAIL, user['email'], msg.as_string())
-                    print(f"📧 Notification sent to {user['email']} for {action}")
-                except Exception as e:
-                    print(f"❌ Failed to notify {user['email']}: {e}")
+                    subject = f'{label} — Retirement Home for Horses'
+                    if not SENDGRID_API_KEY:
+                        print("❌ SendGrid API key not set. Cannot send notification email.")
+                        continue
+                    sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+                    mail = Mail(
+                        from_email=Email(FROM_EMAIL, "Retirement Home for Horses"),
+                        to_emails=To(user['email']),
+                        subject=subject,
+                        html_content=Content("text/html", html)
+                    )
+                    try:
+                        response = sg.send(mail)
+                        if 200 <= response.status_code < 300:
+                            print(f"📧 Notification sent to {user['email']} for {action}")
+                        else:
+                            print(f"❌ Failed to notify {user['email']}: {response.status_code} {response.body}")
+                    except Exception as e:
+                        print(f"❌ Failed to notify {user['email']}: {e}")
 
         except Exception as e:
             print(f"❌ Notification system error: {e}")
@@ -1055,9 +1061,9 @@ def delete_horse_action(horse_name, action_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ==========================================
+
 #      SECTION 2.5: AUDIT TRAIL
-# ==========================================
+
 
 @app.route('/api/audits', methods=['GET'])
 def get_audits():
@@ -1072,9 +1078,7 @@ def get_audits():
         return jsonify({'error': str(e)}), 500
 
 
-# ==========================================
 #      SECTION 3: DAILY OBS / TO-DO (RESTORED!)
-# ==========================================
 
 @app.route('/api/daily-obs', methods=['GET'])
 def get_daily_obs():
