@@ -1,16 +1,19 @@
 from flask import Flask, jsonify, request, send_from_directory
+# Load .env for local development
+from dotenv import load_dotenv
+load_dotenv()
 from flask_cors import CORS
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 from datetime import datetime
-import smtplib
 import secrets
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import threading
+# SendGrid for transactional email
+import sendgrid
+from sendgrid.helpers.mail import Mail, Email, To, Content
 
 # --- CONFIGURATION ---
 app = Flask(__name__, static_folder='frontend', static_url_path='')
@@ -19,12 +22,14 @@ app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32 MB max upload
 CORS(app)
 
 
-# Email Configuration (use env vars in production, fallback to local defaults)
-SMTP_EMAIL = os.environ.get('SMTP_EMAIL', 'luisalmeida0106@gmail.com')
-SMTP_APP_PASSWORD = os.environ.get('SMTP_APP_PASSWORD', 'oqrx kaip oppt pmtt')
-SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 465
+
+# Email Configuration (SendGrid)
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
+FROM_EMAIL = os.environ.get('FROM_EMAIL', 'noreply@horse-retirement-house.com')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://horse-retirement-house-alachua.onrender.com')  # In production, set to your Render URL
+
+if not SENDGRID_API_KEY:
+    print("⚠️  WARNING: SENDGRID_API_KEY environment variable not set. Emails will not be sent.")
 
 # Database Connection
 URI = os.environ.get('MONGODB_URI', 'mongodb+srv://Horse_Python_DataEntry:iAvq68Uzt6Io1a1p@horsesanctuary.83r8ztp.mongodb.net/?appName=HorseSanctuary')
@@ -54,15 +59,11 @@ def format_doc(doc):
     doc['_id'] = str(doc['_id'])
     return doc
 
+
 def send_verification_email(to_email, first_name, token):
-    """Send a verification email with a clickable link."""
+    """Send a verification email with a clickable link using SendGrid."""
     verify_url = f"{FRONTEND_URL}/verify_email.html?token={token}"
-    
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Verify your email — Retirement Home for Horses'
-    msg['From'] = SMTP_EMAIL
-    msg['To'] = to_email
-    
+    subject = 'Verify your email — Retirement Home for Horses'
     html = f"""
     <div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:2rem;">
         <div style="text-align:center;margin-bottom:1.5rem;">
@@ -82,15 +83,24 @@ def send_verification_email(to_email, first_name, token):
         <p style="color:#bbb;font-size:0.75rem;text-align:center;">Retirement Home for Horses, Inc. — Alachua, FL</p>
     </div>
     """
-    
-    msg.attach(MIMEText(html, 'html'))
-    
+    if not SENDGRID_API_KEY:
+        print("❌ SendGrid API key not set. Cannot send email.")
+        return False
     try:
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-            server.login(SMTP_EMAIL, SMTP_APP_PASSWORD)
-            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
-        print(f"✅ Verification email sent to {to_email}")
-        return True
+        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+        mail = Mail(
+            from_email=Email(FROM_EMAIL, "Retirement Home for Horses"),
+            to_emails=To(to_email),
+            subject=subject,
+            html_content=Content("text/html", html)
+        )
+        response = sg.send(mail)
+        if 200 <= response.status_code < 300:
+            print(f"✅ Verification email sent to {to_email}")
+            return True
+        else:
+            print(f"❌ Failed to send email: {response.status_code} {response.body}")
+            return False
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         return False

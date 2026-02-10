@@ -6,5 +6,7 @@ certifi
 pyjwt
 pandas
 werkzeug
+
 requests
 gunicorn
+python-dotenv
