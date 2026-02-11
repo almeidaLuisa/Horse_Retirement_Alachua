@@ -93,6 +93,55 @@
             font-size: 1.1rem; color: var(--text-muted); line-height: 1;
         }
         .search-count { font-size: 0.85rem; color: #7f8c8d; margin-top: 5px; }
+        
+        /* Mobile Card Styles */
+        .horse-cards { display: none; }
+        @media (max-width: 700px) {
+          .table-responsive { display: none !important; }
+          .horse-cards { display: block; margin-top: 18px; }
+          .horse-card {
+            background: #f5faf6;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            padding: 16px 14px 12px 14px;
+            box-shadow: 0 2px 8px rgba(56,142,60,0.07);
+            font-size: 1rem;
+          }
+          .horse-card-title {
+            font-weight: 800;
+            color: var(--green-dark);
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+          }
+          .horse-card-row {
+            margin-bottom: 4px;
+            font-size: 0.97rem;
+          }
+          .horse-card-label {
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-right: 4px;
+          }
+          .horse-card-notes {
+            margin-top: 6px;
+            font-size: 0.95rem;
+            color: #333;
+          }
+          .horse-card-actions {
+            margin-top: 10px;
+          }
+          .horse-card-delete {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 16px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+          }
+        }
     </style>
 </head>
 <body>
@@ -132,6 +181,8 @@
                 </tbody>
         </table>
     </div>
+    <!-- Mobile card container -->
+    <div class="horse-cards" id="horseCards"></div>
 </div>
 
 <script>
@@ -153,21 +204,18 @@
         }
     }
 
-    // RENDER HORSES INTO TABLE
+    // --- RENDER HORSES ---
+    // This function updates both the table (desktop) and cards (mobile).
     function renderHorses(horses) {
-            const tableBody = document.getElementById('horseTableBody');
-            tableBody.innerHTML = '';
-            document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
-
-            if (horses.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
-                return;
-            }
-
+        // Table rendering (desktop)
+        const tableBody = document.getElementById('horseTableBody');
+        tableBody.innerHTML = '';
+        document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
+        if (horses.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
+        } else {
             const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
             const isAdmin = (userRole === 'admin');
-            console.log('User role:', userRole, '| isAdmin:', isAdmin);
-
             horses.forEach(horse => {
                 const horseName = horse.Name || horse.name || '?';
                 const horseId = horse._id || '';
@@ -183,14 +231,48 @@
                 `;
                 tableBody.innerHTML += row;
             });
-
-            // Attach delete click handlers
             document.querySelectorAll('.delete-horse-btn').forEach(btn => {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     deleteHorse(this.dataset.id);
                 });
             });
+        }
+        // Card rendering (mobile)
+        renderHorseCards(horses);
+    }
+    // --- MOBILE CARD RENDER ---
+    // This function creates horse cards for mobile view.
+    function renderHorseCards(horses) {
+        const cardsDiv = document.getElementById('horseCards');
+        cardsDiv.innerHTML = '';
+        if (horses.length === 0) {
+            cardsDiv.innerHTML = '<div style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</div>';
+            return;
+        }
+        const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
+        const isAdmin = (userRole === 'admin');
+        horses.forEach(horse => {
+            const horseName = horse.Name || horse.name || '?';
+            const horseId = horse._id || '';
+            const breed = horse.Breed || horse.breed || '-';
+            const gender = horse.Gender || horse.gender || '-';
+            const pasture = horse['Field Home'] || horse.pasture || '-';
+            const notes = horse.Notes || horse.general_notes || '-';
+            // Build card HTML for each horse
+            let card = `<div class="horse-card" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
+                <div class="horse-card-title">${horseName}</div>
+                <div class="horse-card-row"><span class="horse-card-label">Breed:</span> ${breed}</div>
+                <div class="horse-card-row"><span class="horse-card-label">Gender:</span> ${gender}</div>
+                <div class="horse-card-row"><span class="horse-card-label">Pasture:</span> ${pasture}</div>
+                <div class="horse-card-notes">${notes}</div>`;
+            // If admin, show delete button
+            if (isAdmin) {
+                card += `<div class="horse-card-actions"><button class="horse-card-delete" onclick="event.stopPropagation();deleteHorse('${horseId}')">Delete</button></div>`;
+            }
+            card += '</div>';
+            cardsDiv.innerHTML += card;
+        });
     }
 
     // 3. DELETE HORSE (Admin only)

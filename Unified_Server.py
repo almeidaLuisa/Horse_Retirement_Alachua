@@ -11,7 +11,6 @@ from datetime import datetime
 import secrets
 import os
 import threading
-# SendGrid for transactional email
 import sendgrid
 from sendgrid.helpers.mail import Mail, Email, To, Content
 
