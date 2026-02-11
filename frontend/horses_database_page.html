@@ -245,18 +245,52 @@
 
     // 1. FETCH AND DISPLAY HORSES
     async function fetchHorses() {
-        try {
-            const response = await fetch(API_URL);
-            allHorses = await response.json();
-            
-            document.getElementById('searchInput').value = '';
-            renderHorses(allHorses);
-            showStatus("List updated!", "green");
-        } catch (error) {
-            console.error(error);
-            showStatus("Error fetching data. Is server.py running?", "red");
-        }
+      try {
+        const response = await fetch(API_URL);
+        allHorses = await response.json();
+        document.getElementById('searchInput').value = '';
+        renderHorses(allHorses);
+        showStatus("List updated!", "green");
+      } catch (error) {
+        console.error(error);
+        showStatus("Error fetching data. Is server.py running?", "red");
+      }
     }
+
+    // --- SEARCH/FILTER FUNCTIONALITY ---
+    /**
+     * @author Luisa Almeida Quintella
+     * @purpose Filter horses based on search input
+     * @return {void}
+     */
+    function filterHorses() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!query) {
+        renderHorses(allHorses);
+        return;
+      }
+      const filtered = allHorses.filter(horse => {
+        const name = (horse.Name || horse.name || '').toLowerCase();
+        const breed = (horse.Breed || horse.breed || '').toLowerCase();
+        const gender = (horse.Gender || horse.gender || '').toLowerCase();
+        const pasture = (horse['Field Home'] || horse.pasture || '').toLowerCase();
+        const notes = (horse.Notes || horse.general_notes || '').toLowerCase();
+        return (
+          name.includes(query) ||
+          breed.includes(query) ||
+          gender.includes(query) ||
+          pasture.includes(query) ||
+          notes.includes(query)
+        );
+      });
+      renderHorses(filtered);
+    }
+
+    // Listen for input events on search bar
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchHorses();
+      document.getElementById('searchInput').addEventListener('input', filterHorses);
+    });
 
     // --- RENDER HORSES ---
     /**
@@ -266,39 +300,39 @@
      * @return {void}
      */
     function renderHorses(horses) {
-        // Table rendering (desktop)
-        const tableBody = document.getElementById('horseTableBody');
-        tableBody.innerHTML = '';
-        document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
-        if (horses.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
-        } else {
-            const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
-            const isAdmin = (userRole === 'admin');
-            horses.forEach(horse => {
-                const horseName = horse.Name || horse.name || '?';
-                const horseId = horse._id || '';
-                const row = `
-                    <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
-                        <td><strong>${horseName}</strong></td>
-                        <td>${horse.Breed || horse.breed || '-'}</td>
-                        <td>${horse.Gender || horse.gender || '-'}</td>
-                        <td>${horse['Field Home'] || horse.pasture || '-'}</td>
-                        <td>${horse.Notes || horse.general_notes || '-'}</td>
-                        <td class="action-buttons"><button class="delete-horse-btn" data-id="${horseId}" data-name="${horseName}" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:700;font-size:0.8rem;" title="Delete horse"><i class="bi bi-trash"></i> Delete</button></td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-            document.querySelectorAll('.delete-horse-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    deleteHorse(this.dataset.id);
-                });
-            });
-        }
-        // Card rendering (mobile)
-        renderHorseCards(horses);
+      // Table rendering (desktop)
+      const tableBody = document.getElementById('horseTableBody');
+      tableBody.innerHTML = '';
+      document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
+      if (horses.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
+      } else {
+        const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
+        const isAdmin = (userRole === 'admin');
+        horses.forEach(horse => {
+          const horseName = horse.Name || horse.name || '?';
+          const horseId = horse._id || '';
+          const row = `
+            <tr style="cursor:pointer;" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
+              <td><strong>${horseName}</strong></td>
+              <td>${horse.Breed || horse.breed || '-'}</td>
+              <td>${horse.Gender || horse.gender || '-'}</td>
+              <td>${horse['Field Home'] || horse.pasture || '-'}</td>
+              <td>${horse.Notes || horse.general_notes || '-'}</td>
+              <td class="action-buttons"><button class="delete-horse-btn" data-id="${horseId}" data-name="${horseName}" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-weight:700;font-size:0.8rem;" title="Delete horse"><i class="bi bi-trash"></i> Delete</button></td>
+            </tr>
+          `;
+          tableBody.innerHTML += row;
+        });
+        document.querySelectorAll('.delete-horse-btn').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deleteHorse(this.dataset.id);
+          });
+        });
+      }
+      // Card rendering (mobile)
+      renderHorseCards(horses);
     }
     // --- MOBILE CARD RENDER ---
     /**
