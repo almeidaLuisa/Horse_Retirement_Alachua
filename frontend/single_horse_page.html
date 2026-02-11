@@ -797,15 +797,29 @@
             // On page load, force notes fields to be read-only for viewers
             document.addEventListener('DOMContentLoaded', function() {
               const role = (localStorage.getItem('user_role') || '').toLowerCase();
+              const farrier = document.getElementById('detailFarrierNotes');
+              const medical = document.getElementById('detailMedical');
+              const behavior = document.getElementById('detailBehavior');
               if (!(role === 'admin' || role === 'editor')) {
-                document.getElementById('detailFarrierNotes').setAttribute('disabled', 'true');
-                document.getElementById('detailMedical').setAttribute('disabled', 'true');
-                document.getElementById('detailBehavior').setAttribute('disabled', 'true');
+                farrier.setAttribute('readonly', 'true');
+                farrier.setAttribute('disabled', 'true');
+                medical.setAttribute('readonly', 'true');
+                medical.setAttribute('disabled', 'true');
+                behavior.setAttribute('readonly', 'true');
+                behavior.setAttribute('disabled', 'true');
                 document.getElementById('horseNotes').contentEditable = false;
+                // Prevent focus and input for viewers
+                [farrier, medical, behavior].forEach(field => {
+                  field.addEventListener('focus', e => { e.target.blur(); });
+                  field.addEventListener('input', e => { e.target.value = field.defaultValue; });
+                });
               } else {
-                document.getElementById('detailFarrierNotes').removeAttribute('disabled');
-                document.getElementById('detailMedical').removeAttribute('disabled');
-                document.getElementById('detailBehavior').removeAttribute('disabled');
+                farrier.removeAttribute('readonly');
+                farrier.removeAttribute('disabled');
+                medical.removeAttribute('readonly');
+                medical.removeAttribute('disabled');
+                behavior.removeAttribute('readonly');
+                behavior.removeAttribute('disabled');
               }
             });
       }
