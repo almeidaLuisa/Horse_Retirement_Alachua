@@ -1,10 +1,26 @@
 <!DOCTYPE html>
+  <!--
+    ============================================
+    Horse Database Page (Frontend)
+    --------------------------------------------
+    This is a single HTML file containing:
+      1) HTML: structure of the page
+      2) CSS: styling + responsive layout
+      3) JavaScript: logic to fetch/search/delete horses
+    ============================================
+  -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
     <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!--
+    Viewport controls how the page scales on mobile.
+    - width=device-width => match phone screen width
+    - initial-scale=1.0 => default zoom
+    - maximum-scale=1.0 + user-scalable=no => prevents pinch-to-zoom (not great for accessibility)
+  -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Horse Database — The Retirement Home for Horses, Inc.</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
@@ -20,7 +36,37 @@
           --card-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
         body { font-family: 'Nunito', sans-serif; background: linear-gradient(170deg, var(--green-light) 0%, #f5faf6 40%, var(--blue-light) 100%); padding: 20px; min-height: 100vh; color: var(--text-dark); }
-        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: var(--card-shadow); }
+        .container {
+          margin-left: auto;
+          margin-right: auto;
+          max-width: 98vw;
+          width: 100%;
+          box-sizing: border-box;
+          background: white;
+          padding: 30px;
+          border-radius: 12px;
+          box-shadow: var(--card-shadow);
+        }
+
+    /*
+      ============================================
+      RESPONSIVE (MOBILE) ADJUSTMENTS
+      --------------------------------------------
+      This section applies when screen width <= 700px.
+      ============================================
+    */
+        @media (max-width: 700px) {
+          .container {
+            padding: 8px;
+            border-radius: 0;
+            box-shadow: none;
+            max-width: 100vw;
+            width: 100vw;
+            min-width: 100vw;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        }
         h1 { color: var(--green-dark); text-align: center; font-weight: 800; }
         h2 { color: var(--text-dark); font-weight: 700; }
         
@@ -35,10 +81,33 @@
         .btn-danger { background-color: #e74c3c; color: white; }
         .btn-secondary { background-color: #95a5a6; color: white; }
 
-        /* Table Styles */
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eceff1; font-size: 0.92rem; }
-        th { background: linear-gradient(90deg, var(--green-dark), var(--blue-dark)); color: white; font-weight: 700; }
+     /*
+      ============================================
+      TABLE STYLES (DESKTOP VIEW)
+      --------------------------------------------
+      min-width: 600px forces table to be at least 600px wide,
+      which will overflow on small phone screens.
+      ============================================
+    */
+        table {
+          min-width: 600px;
+          width: 100%;
+          border-collapse: collapse;
+        }
+        th, td {
+          padding: 12px;
+          text-align: left;
+          border-bottom: 1px solid #eceff1;
+          font-size: 0.92rem;
+          word-break: break-word;
+          white-space: normal !important;
+          max-width: 180px;
+        }
+        th {
+          background: linear-gradient(90deg, var(--green-dark), var(--blue-dark));
+          color: white;
+          font-weight: 700;
+        }
         tr:hover { background-color: var(--green-light); }
         
         .action-buttons { display: flex; gap: 5px; }
@@ -58,6 +127,62 @@
             font-size: 1.1rem; color: var(--text-muted); line-height: 1;
         }
         .search-count { font-size: 0.85rem; color: #7f8c8d; margin-top: 5px; }
+        
+            /*
+      ============================================
+      MOBILE CARD STYLES
+      --------------------------------------------
+      Desktop: show table, hide cards.
+      Mobile: hide table, show cards.
+      ============================================
+    */
+        .horse-cards { display: none; }
+        @media (max-width: 700px) {
+          .table-responsive { display: none !important; }
+          .horse-cards { display: block; margin-top: 18px; }
+          .horse-card {
+            background: #f5faf6;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            padding: 16px 14px 12px 14px;
+            box-shadow: 0 2px 8px rgba(56,142,60,0.07);
+            font-size: 1rem;
+          }
+          .horse-card-title {
+            font-weight: 800;
+            color: var(--green-dark);
+            font-size: 1.1rem;
+            margin-bottom: 2px;
+          }
+          .horse-card-row {
+            margin-bottom: 4px;
+            font-size: 0.97rem;
+          }
+          .horse-card-label {
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-right: 4px;
+          }
+          .horse-card-notes {
+            margin-top: 6px;
+            font-size: 0.95rem;
+            color: #333;
+          }
+          .horse-card-actions {
+            margin-top: 10px;
+          }
+          .horse-card-delete {
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 16px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+          }
+        }
     </style>
 </head>
 <body>
@@ -97,9 +222,24 @@
                 </tbody>
         </table>
     </div>
+    <!-- Mobile card container -->
+    <div class="horse-cards" id="horseCards"></div>
 </div>
-
+   <!-- /*
+      ============================================
+      JavaScript Logic
+      --------------------------------------------
+      This script:
+        - fetches horses from backend API
+        - stores them in memory for searching
+        - renders them as:
+            - a table on desktop
+            - cards on mobile
+        - allows admins to delete horses
+      ============================================
+    */ -->
 <script>
+    //backend endpoint for horse data 
     const API_URL = "/horses";
     let allHorses = [];  // cached for search filtering
 
@@ -118,21 +258,23 @@
         }
     }
 
-    // RENDER HORSES INTO TABLE
+    // --- RENDER HORSES ---
+    /**
+     * @author Luisa Almeida Quintella
+     * @purpose Render horses in both table (desktop) and card (mobile) layouts.
+     * @param {Array} horses - Array of horse objects to display.
+     * @return {void}
+     */
     function renderHorses(horses) {
-            const tableBody = document.getElementById('horseTableBody');
-            tableBody.innerHTML = '';
-            document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
-
-            if (horses.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
-                return;
-            }
-
+        // Table rendering (desktop)
+        const tableBody = document.getElementById('horseTableBody');
+        tableBody.innerHTML = '';
+        document.getElementById('searchCount').textContent = horses.length + ' horse' + (horses.length !== 1 ? 's' : '') + ' shown';
+        if (horses.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</td></tr>';
+        } else {
             const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
             const isAdmin = (userRole === 'admin');
-            console.log('User role:', userRole, '| isAdmin:', isAdmin);
-
             horses.forEach(horse => {
                 const horseName = horse.Name || horse.name || '?';
                 const horseId = horse._id || '';
@@ -148,14 +290,53 @@
                 `;
                 tableBody.innerHTML += row;
             });
-
-            // Attach delete click handlers
             document.querySelectorAll('.delete-horse-btn').forEach(btn => {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     deleteHorse(this.dataset.id);
                 });
             });
+        }
+        // Card rendering (mobile)
+        renderHorseCards(horses);
+    }
+    // --- MOBILE CARD RENDER ---
+    /**
+     * @author Luisa Almeida Quintella
+     * @purpose Render horse cards for mobile layout.
+     * @param {Array} horses - Array of horse objects to display as cards.
+     * @return {void}
+     */
+    function renderHorseCards(horses) {
+        const cardsDiv = document.getElementById('horseCards');
+        cardsDiv.innerHTML = '';
+        if (horses.length === 0) {
+            cardsDiv.innerHTML = '<div style="text-align:center;color:#95a5a6;padding:2rem;">No horses match your search</div>';
+            return;
+        }
+        const userRole = (localStorage.getItem('user_role') || '').toLowerCase();
+        const isAdmin = (userRole === 'admin');
+        horses.forEach(horse => {
+            const horseName = horse.Name || horse.name || '?';
+            const horseId = horse._id || '';
+            const breed = horse.Breed || horse.breed || '-';
+            const gender = horse.Gender || horse.gender || '-';
+            const pasture = horse['Field Home'] || horse.pasture || '-';
+            const notes = horse.Notes || horse.general_notes || '-';
+            // Build card HTML for each horse
+            let card = `<div class="horse-card" onclick="window.location.href='single_horse_page.html?name=${encodeURIComponent(horseName)}'">
+                <div class="horse-card-title">${horseName}</div>
+                <div class="horse-card-row"><span class="horse-card-label">Breed:</span> ${breed}</div>
+                <div class="horse-card-row"><span class="horse-card-label">Gender:</span> ${gender}</div>
+                <div class="horse-card-row"><span class="horse-card-label">Pasture:</span> ${pasture}</div>
+                <div class="horse-card-notes">${notes}</div>`;
+            // If admin, show delete button
+            if (isAdmin) {
+                card += `<div class="horse-card-actions"><button class="horse-card-delete" onclick="event.stopPropagation();deleteHorse('${horseId}')">Delete</button></div>`;
+            }
+            card += '</div>';
+            cardsDiv.innerHTML += card;
+        });
     }
 
     // 3. DELETE HORSE (Admin only)
@@ -180,6 +361,13 @@
     }
 
     // 4. HELPER FUNCTIONS
+    /**
+     * @author Luisa Almeida Quintella
+     * @purpose Show a status message to the user (success, error, info).
+     * @param {string} msg - The message to display.
+     * @param {string} color - Background color for the message.
+     * @return {void}
+     */
     function showStatus(msg, color) {
         const el = document.getElementById('statusMsg');
         el.innerText = msg;
@@ -189,27 +377,37 @@
         setTimeout(() => el.style.display = 'none', 3000);
     }
 
-    // SEARCH: filter horses as user types
-    document.getElementById('searchInput').addEventListener('input', function() {
-        const q = this.value.toLowerCase().trim();
-        if (!q) { renderHorses(allHorses); return; }
+    /**
+     * @author Luisa Almeida Quintella
+     * @purpose Delete a horse from the database (admin only).
+     * @param {string} id - The horse's unique ID.
+     * @return {void}
+     */
+    async function deleteHorse(id) {
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        if (role !== 'admin') {
+            showStatus("🔒 Only admins can delete horses.", "#c62828");
+            return;
+        }
+        if (!confirm("Are you sure you want to permanently delete this horse? This cannot be undone.")) return;
 
-        const filtered = allHorses.filter(h => {
-            const searchable = [
-                h.Name, h.name, h.Breed, h.breed, h.Gender, h.gender,
-                h['Field Home'], h.pasture, h.Notes, h.general_notes,
-                h['Medical Conditions'], h['Farrier notes'], h['Treatment Description']
-            ].filter(Boolean).join(' ').toLowerCase();
-            return searchable.includes(q);
-        });
+        try {
+            const userEmail = localStorage.getItem('user_email') || 'Unknown';
+            const response = await fetch(`${API_URL}/${id}?user_email=${encodeURIComponent(userEmail)}`, { method: 'DELETE' });
+            if (response.ok) {
+                showStatus("Horse deleted.", "orange");
+                fetchHorses();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
-        renderHorses(filtered);
-    });
-
-    // Load data on start
-    fetchHorses();
-
-    // Permission check
+    /**
+     * @author Luisa Almeida Quintella
+     * @purpose Check if the current user has editor or admin permissions.
+     * @return {boolean} - True if user is editor/admin, false otherwise.
+     */
     function checkEditor() {
       const role = (localStorage.getItem('user_role') || '').toLowerCase();
       if (role !== 'admin' && role !== 'editor') {
@@ -218,6 +416,8 @@
       }
       return true;
     }
+    // Load horses immediately when this page opens
+    document.addEventListener('DOMContentLoaded', fetchHorses);
     </script>
 
 </body>
