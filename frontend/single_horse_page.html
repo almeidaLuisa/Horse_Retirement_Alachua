@@ -12,6 +12,68 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
 
     <style>
+            /* Responsive mobile improvements */
+            @media (max-width: 900px) {
+              .section {
+                max-width: 98vw;
+                margin: 0 auto 2rem auto;
+                padding: 0.5rem;
+              }
+              .horse-header {
+                flex-direction: column;
+                align-items: stretch;
+              }
+              .horse-photo img {
+                width: 100%;
+                max-width: 320px;
+                margin: 0 auto;
+              }
+              .horse-details, .horse-notes-col {
+                width: 100%;
+                margin-bottom: 1rem;
+              }
+              .edit-bar {
+                flex-direction: column;
+                gap: 0.5rem;
+              }
+              table {
+                display: block;
+                overflow-x: auto;
+                width: 100%;
+                border-radius: 8px;
+              }
+              th, td {
+                white-space: nowrap;
+              }
+            }
+            /* Card layout for mobile tables */
+            @media (max-width: 600px) {
+              .section {
+                padding: 0.2rem;
+              }
+              table {
+                font-size: 0.95rem;
+              }
+              .horse-header {
+                padding: 0.5rem;
+              }
+            }
+            /* Center the main container */
+            body {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              min-height: 100vh;
+              background: #f7fafc;
+            }
+            .section {
+              max-width: 900px;
+              margin: 2rem auto;
+              background: #fff;
+              border-radius: 16px;
+              box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+              padding: 2rem;
+            }
       :root {
         --green-light: #e8f5e9;
         --green-mid:   #81c784;
@@ -523,7 +585,12 @@
       let currentHorseId = null;   // MongoDB _id
       let originalValues = {};     // snapshot before editing
 
-      // Read horse name from URL and set the title + image
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Read horse name from URL and set the title + image
+       * @arguments none (uses window.location)
+       * @return void
+       */
       const params = new URLSearchParams(window.location.search);
       const horseName = params.get('name');
       if (horseName) {
@@ -550,11 +617,15 @@
         };
 
         // Clean up name: strip parenthetical suffixes, trim
+        /**
+         * @author Luisa Almeida Quintella
+         * @purpose Map horse name to image filename
+         * @arguments name (string)
+         * @return string (image filename)
+         */
         function getImageName(name) {
           if (imageNameMap[name]) return imageNameMap[name];
-          // Strip parenthetical like "(Don't poke the bear)" or "(new)"
           let clean = name.replace(/\s*\(.*?\)\s*$/, '').trim();
-          // Strip suffixes like "II"
           let noSuffix = clean.replace(/\s+II\s*$/, '').trim();
           return clean;
         }
@@ -563,6 +634,12 @@
         img.alt = horseName;
         img.style.display = 'none'; // hide until we have a source
 
+        /**
+         * @author Luisa Almeida Quintella
+         * @purpose Show placeholder when horse photo is missing
+         * @arguments none
+         * @return void
+         */
         function showPlaceholder() {
           const container = document.querySelector('.horse-photo');
           if (container) {
@@ -601,10 +678,15 @@
               }
 
               // Helper: format date strings nicely
+              /**
+               * @author Luisa Almeida Quintella
+               * @purpose Format date strings for display
+               * @arguments val (string or date)
+               * @return string (formatted date)
+               */
               function fmtDate(val) {
                 if (!val) return '—';
                 const s = String(val);
-                // Try to parse ISO date
                 const d = new Date(s);
                 if (!isNaN(d.getTime())) {
                   return d.toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
@@ -643,10 +725,22 @@
 
       // ── Edit / Save helpers ──
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Get all editable fields in horse details
+       * @arguments none
+       * @return NodeList of input elements
+       */
       function getEditableFields() {
         return document.querySelectorAll('.horse-details input');
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Set fields to readonly or editable
+       * @arguments readonly (boolean)
+       * @return void
+       */
       function setFieldsReadonly(readonly) {
         getEditableFields().forEach(input => {
           if (readonly) input.setAttribute('readonly', '');
@@ -655,6 +749,12 @@
         document.getElementById('horseNotes').contentEditable = !readonly;
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Snapshot current values for editing
+       * @arguments none
+       * @return void
+       */
       function snapshotValues() {
         originalValues = {};
         getEditableFields().forEach(input => {
@@ -663,6 +763,12 @@
         originalValues['horseNotes'] = document.getElementById('horseNotes').textContent;
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Restore values to snapshot
+       * @arguments none
+       * @return void
+       */
       function restoreValues() {
         getEditableFields().forEach(input => {
           if (originalValues[input.id] !== undefined) input.value = originalValues[input.id];
@@ -670,6 +776,12 @@
         document.getElementById('horseNotes').textContent = originalValues['horseNotes'] || '';
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Enable editing mode for horse details
+       * @arguments none
+       * @return void
+       */
       function enableEditing() {
         if (!isAdmin()) return;
         snapshotValues();
@@ -679,6 +791,12 @@
         document.getElementById('btnCancel').style.display = 'inline-flex';
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Cancel editing and restore values
+       * @arguments none
+       * @return void
+       */
       function cancelEditing() {
         restoreValues();
         setFieldsReadonly(true);
@@ -687,6 +805,12 @@
         document.getElementById('btnCancel').style.display = 'none';
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Save changes to horse details
+       * @arguments none
+       * @return void
+       */
       async function saveChanges() {
         if (!isAdmin()) return;
         if (!currentHorseId) {
@@ -733,6 +857,12 @@
         }
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Show toast notification
+       * @arguments msg (string), bgColor (string)
+       * @return void
+       */
       function showToast(msg, bgColor) {
         const toast = document.getElementById('saveToast');
         toast.textContent = msg;
@@ -742,6 +872,12 @@
       }
 
       // Delete horse (admin only)
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Delete horse from database
+       * @arguments none
+       * @return void
+       */
       async function deleteHorse() {
         const role = (localStorage.getItem('user_role') || '').toLowerCase();
         if (role !== 'admin') {
@@ -785,6 +921,12 @@
       })();
 
       // Permission check
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Check if user is admin/editor
+       * @arguments none
+       * @return boolean
+       */
       function isAdmin() {
         const role = (localStorage.getItem('user_role') || '').toLowerCase();
         if (role !== 'admin' && role !== 'editor') {
@@ -803,6 +945,12 @@
         document.getElementById('treatmentOther').style.display = this.value === '__other__' ? 'block' : 'none';
       });
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Load treatments for this horse
+       * @arguments none
+       * @return void
+       */
       async function loadTreatments() {
         if (!horseName) return;
         const tbody = document.getElementById('treatmentsTableBody');
@@ -837,6 +985,12 @@
         }
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Add new treatment for horse
+       * @arguments none
+       * @return void
+       */
       async function addTreatment() {
         if (!isAdmin()) return;
         const select = document.getElementById('treatmentType');
@@ -883,6 +1037,12 @@
         }
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Delete treatment from horse
+       * @arguments treatmentId (string), treatmentName (string)
+       * @return void
+       */
       async function deleteTreatment(treatmentId, treatmentName) {
         if (!isAdmin()) return;
         if (!confirm(`Delete treatment "${treatmentName}"? This cannot be undone.`)) return;
@@ -911,6 +1071,12 @@
       //        ACTION TAKEN TABLE
       // ═══════════════════════════════════════
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Populate Action Taken treatment dropdown
+       * @arguments treatments (array)
+       * @return void
+       */
       function populateActionTreatmentSelect(treatments) {
         const sel = document.getElementById('actionTreatmentSelect');
         const hint = document.getElementById('noTreatmentsHint');
@@ -931,6 +1097,12 @@
         });
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Load actions taken for this horse
+       * @arguments none
+       * @return void
+       */
       async function loadActions() {
         if (!horseName) return;
         const tbody = document.getElementById('actionsTableBody');
@@ -962,6 +1134,12 @@
         }
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Add new action taken for horse
+       * @arguments none
+       * @return void
+       */
       async function addAction() {
         if (!isAdmin()) return;
         const sel = document.getElementById('actionTreatmentSelect');
@@ -998,6 +1176,12 @@
         }
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Delete action taken from horse
+       * @arguments actionId (string), treatmentName (string)
+       * @return void
+       */
       async function deleteAction(actionId, treatmentName) {
         if (!isAdmin()) return;
         if (!confirm(`Delete action "${treatmentName}"? This cannot be undone.`)) return;
@@ -1026,6 +1210,12 @@
       //        DOCUMENTS TABLE
       // ═══════════════════════════════════════
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Load documents for this horse
+       * @arguments none
+       * @return void
+       */
       async function loadDocs() {
         if (!horseName) return;
         const tbody = document.getElementById('docsTableBody');
@@ -1062,6 +1252,12 @@
 
       // Store loaded docs for viewing
       let _loadedDocs = [];
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose View document in new window
+       * @arguments docId (string)
+       * @return void
+       */
       async function viewDoc(docId) {
         // Fetch the doc data to show full-size image
         try {
@@ -1081,6 +1277,12 @@
         }
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Upload new document for horse
+       * @arguments none
+       * @return void
+       */
       async function uploadDoc() {
         if (!isAdmin()) return;
         const fileInput = document.getElementById('docFileInput');
@@ -1124,6 +1326,12 @@
         reader.readAsDataURL(file);
       }
 
+      /**
+       * @author Luisa Almeida Quintella
+       * @purpose Delete document from horse
+       * @arguments docId (string), docName (string)
+       * @return void
+       */
       async function deleteDoc(docId, docName) {
         if (!isAdmin()) return;
         if (!confirm(`Delete document "${docName}"? This cannot be undone.`)) return;
