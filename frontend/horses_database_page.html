@@ -39,8 +39,8 @@
         .container {
           margin-left: auto;
           margin-right: auto;
-          max-width: 100vw;
-          width: 100vw;
+          max-width: 900px;
+          width: 100%;
           box-sizing: border-box;
           background: white;
           padding: 30px;
@@ -416,6 +416,8 @@
       }
       return true;
     }
+    // Load horses immediately when this page opens
+    document.addEventListener('DOMContentLoaded', fetchHorses);
     </script>
 
 </body>
