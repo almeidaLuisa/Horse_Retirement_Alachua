@@ -760,7 +760,19 @@
        * @return NodeList of input elements
        */
       function getEditableFields() {
-        return document.querySelectorAll('.horse-details input');
+        // Only allow editors/admins to edit notes fields
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        const editableInputs = Array.from(document.querySelectorAll('.horse-details input'));
+        // For notes fields, only allow if editor/admin
+        const editableTextareas = [];
+        if (role === 'admin' || role === 'editor') {
+          editableTextareas.push(
+            document.getElementById('detailFarrierNotes'),
+            document.getElementById('detailMedical'),
+            document.getElementById('detailBehavior')
+          );
+        }
+        return [...editableInputs, ...editableTextareas.filter(Boolean)];
       }
 
       /**
@@ -771,10 +783,16 @@
        */
       function setFieldsReadonly(readonly) {
         getEditableFields().forEach(input => {
-          if (readonly) input.setAttribute('readonly', '');
-          else input.removeAttribute('readonly');
+          if (input.tagName === 'TEXTAREA') {
+            input.readOnly = readonly;
+          } else {
+            if (readonly) input.setAttribute('readonly', '');
+            else input.removeAttribute('readonly');
+          }
         });
-        document.getElementById('horseNotes').contentEditable = !readonly;
+        // Only editors/admins can edit general notes
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
+        document.getElementById('horseNotes').contentEditable = (!readonly && (role === 'admin' || role === 'editor'));
       }
 
       /**
