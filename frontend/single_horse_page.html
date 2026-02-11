@@ -798,10 +798,14 @@
             document.addEventListener('DOMContentLoaded', function() {
               const role = (localStorage.getItem('user_role') || '').toLowerCase();
               if (!(role === 'admin' || role === 'editor')) {
-                document.getElementById('detailFarrierNotes').readOnly = true;
-                document.getElementById('detailMedical').readOnly = true;
-                document.getElementById('detailBehavior').readOnly = true;
+                document.getElementById('detailFarrierNotes').setAttribute('disabled', 'true');
+                document.getElementById('detailMedical').setAttribute('disabled', 'true');
+                document.getElementById('detailBehavior').setAttribute('disabled', 'true');
                 document.getElementById('horseNotes').contentEditable = false;
+              } else {
+                document.getElementById('detailFarrierNotes').removeAttribute('disabled');
+                document.getElementById('detailMedical').removeAttribute('disabled');
+                document.getElementById('detailBehavior').removeAttribute('disabled');
               }
             });
       }
