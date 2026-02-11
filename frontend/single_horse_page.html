@@ -782,17 +782,28 @@
        * @return void
        */
       function setFieldsReadonly(readonly) {
+        const role = (localStorage.getItem('user_role') || '').toLowerCase();
         getEditableFields().forEach(input => {
           if (input.tagName === 'TEXTAREA') {
-            input.readOnly = readonly;
+            // Only editors/admins can edit notes fields
+            input.readOnly = (readonly || !(role === 'admin' || role === 'editor'));
           } else {
             if (readonly) input.setAttribute('readonly', '');
             else input.removeAttribute('readonly');
           }
         });
         // Only editors/admins can edit general notes
-        const role = (localStorage.getItem('user_role') || '').toLowerCase();
         document.getElementById('horseNotes').contentEditable = (!readonly && (role === 'admin' || role === 'editor'));
+            // On page load, force notes fields to be read-only for viewers
+            document.addEventListener('DOMContentLoaded', function() {
+              const role = (localStorage.getItem('user_role') || '').toLowerCase();
+              if (!(role === 'admin' || role === 'editor')) {
+                document.getElementById('detailFarrierNotes').readOnly = true;
+                document.getElementById('detailMedical').readOnly = true;
+                document.getElementById('detailBehavior').readOnly = true;
+                document.getElementById('horseNotes').contentEditable = false;
+              }
+            });
       }
 
       /**
