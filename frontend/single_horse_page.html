@@ -536,8 +536,8 @@
         <div id="docUploadForm" style="display:none; margin-bottom:1rem; padding:1rem; background:#f9f9f9; border-radius:10px;">
             <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:end;">
                 <div style="flex:1; min-width:180px;">
-                    <label style="font-weight:600; font-size:0.85rem;">Image File</label>
-                    <input type="file" id="docFileInput" accept="image/*" class="form-control" style="font-size:0.9rem;">
+                  <label style="font-weight:600; font-size:0.85rem;">File (Image or PDF)</label>
+                  <input type="file" id="docFileInput" accept="image/*,application/pdf" class="form-control" style="font-size:0.9rem;">
                 </div>
                 <div style="flex:1; min-width:180px;">
                     <label style="font-weight:600; font-size:0.85rem;">Description</label>
@@ -1258,16 +1258,23 @@
             const date = d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString() : '—';
             const role = (localStorage.getItem('user_role') || '').toLowerCase();
             const canDelete = role === 'admin' || role === 'editor';
-            const isImage = d.file_data && d.file_data.startsWith('data:image');
-            const preview = isImage
-              ? `<img src="${d.file_data}" style="max-width:80px;max-height:60px;border-radius:6px;cursor:pointer;object-fit:cover;" onclick="viewDoc('${d._id}')" title="Click to view full size">`
-              : `<i class="bi bi-file-earmark" style="font-size:1.5rem;color:#888;"></i>`;
+            let preview = '';
+            let viewBtn = '';
+            if (d.file_data && d.file_data.startsWith('data:image')) {
+              preview = `<img src="${d.file_data}" style="max-width:80px;max-height:60px;border-radius:6px;cursor:pointer;object-fit:cover;" onclick="viewDoc('${d._id}')" title="Click to view full size">`;
+              viewBtn = `<span class="icon" title="View" style="cursor:pointer;" onclick="viewDoc('${d._id}')"><i class="bi bi-eye"></i></span> `;
+            } else if (d.file_data && d.file_data.startsWith('data:application/pdf')) {
+              preview = `<i class="bi bi-file-earmark-pdf" style="font-size:2rem;color:#b71c1c;cursor:pointer;" onclick="viewDoc('${d._id}')" title="View PDF"></i>`;
+              viewBtn = `<span class="icon" title="View PDF" style="cursor:pointer;" onclick="viewDoc('${d._id}')"><i class="bi bi-eye"></i></span> `;
+            } else {
+              preview = `<i class="bi bi-file-earmark" style="font-size:1.5rem;color:#888;"></i>`;
+            }
             return `<tr>
               <td style="text-align:center;">${preview}</td>
               <td>${d.description || d.file_name || '—'}</td>
               <td>${date}</td>
               <td>
-                ${isImage ? `<span class="icon" title="View" style="cursor:pointer;" onclick="viewDoc('${d._id}')"><i class="bi bi-eye"></i></span> ` : ''}
+                ${viewBtn}
                 ${canDelete ? `<span class="icon" title="Delete" style="cursor:pointer;color:#c62828;" onclick="deleteDoc('${d._id}','${(d.description || d.file_name || '').replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></span>` : ''}
               </td>
             </tr>`;
@@ -1294,11 +1301,21 @@
           const doc = docs.find(d => d._id === docId);
           if (doc && doc.file_data) {
             const win = window.open('', '_blank');
-            win.document.write(`
-              <html><head><title>${doc.description || doc.file_name || 'Document'}</title>
-              <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#222;}</style></head>
-              <body><img src="${doc.file_data}" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);"></body></html>
-            `);
+            if (doc.file_data.startsWith('data:image')) {
+              win.document.write(`
+                <html><head><title>${doc.description || doc.file_name || 'Document'}</title>
+                <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#222;}</style></head>
+                <body><img src="${doc.file_data}" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);"></body></html>
+              `);
+            } else if (doc.file_data.startsWith('data:application/pdf')) {
+              win.document.write(`
+                <html><head><title>${doc.description || doc.file_name || 'PDF Document'}</title>
+                <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#222;}</style></head>
+                <body><embed src="${doc.file_data}" type="application/pdf" width="95%" height="95%" style="border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);background:#fff;" /></body></html>
+              `);
+            } else {
+              win.document.write(`<html><body><p>Cannot preview this file type.</p></body></html>`);
+            }
           }
         } catch (e) {
           showToast('Could not load document.', '#c62828');
@@ -1322,10 +1339,10 @@
           return;
         }
 
-        // Read file as base64
+        // Read file as base64 (image or PDF)
         const reader = new FileReader();
         reader.onload = async function() {
-          const base64 = reader.result; // data:image/...;base64,...
+          const base64 = reader.result; // data:image/...;base64,... or data:application/pdf;...
           try {
             const res = await fetch(`/api/docs/${encodeURIComponent(horseName)}`, {
               method: 'POST',
@@ -1351,7 +1368,11 @@
             showToast('Server error during upload.', '#c62828');
           }
         };
-        reader.readAsDataURL(file);
+        if (file.type === 'application/pdf') {
+          reader.readAsDataURL(file);
+        } else {
+          reader.readAsDataURL(file);
+        }
       }
 
       /**
