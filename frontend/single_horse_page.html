@@ -797,29 +797,24 @@
             // On page load, force notes fields to be read-only for viewers
             document.addEventListener('DOMContentLoaded', function() {
               const role = (localStorage.getItem('user_role') || '').toLowerCase();
-              const farrier = document.getElementById('detailFarrierNotes');
-              const medical = document.getElementById('detailMedical');
-              const behavior = document.getElementById('detailBehavior');
               if (!(role === 'admin' || role === 'editor')) {
-                farrier.setAttribute('readonly', 'true');
-                farrier.setAttribute('disabled', 'true');
-                medical.setAttribute('readonly', 'true');
-                medical.setAttribute('disabled', 'true');
-                behavior.setAttribute('readonly', 'true');
-                behavior.setAttribute('disabled', 'true');
+                // Replace textarea with div for viewers
+                function replaceTextareaWithDiv(id) {
+                  const textarea = document.getElementById(id);
+                  if (!textarea) return;
+                  const div = document.createElement('div');
+                  div.id = id;
+                  div.className = textarea.className;
+                  div.style = textarea.style.cssText;
+                  div.innerText = textarea.value;
+                  div.tabIndex = -1;
+                  div.setAttribute('aria-readonly', 'true');
+                  textarea.parentNode.replaceChild(div, textarea);
+                }
+                replaceTextareaWithDiv('detailFarrierNotes');
+                replaceTextareaWithDiv('detailMedical');
+                replaceTextareaWithDiv('detailBehavior');
                 document.getElementById('horseNotes').contentEditable = false;
-                // Prevent focus and input for viewers
-                [farrier, medical, behavior].forEach(field => {
-                  field.addEventListener('focus', e => { e.target.blur(); });
-                  field.addEventListener('input', e => { e.target.value = field.defaultValue; });
-                });
-              } else {
-                farrier.removeAttribute('readonly');
-                farrier.removeAttribute('disabled');
-                medical.removeAttribute('readonly');
-                medical.removeAttribute('disabled');
-                behavior.removeAttribute('readonly');
-                behavior.removeAttribute('disabled');
               }
             });
       }
