@@ -1275,7 +1275,7 @@
               <td>${date}</td>
               <td>
                 ${viewBtn}
-                ${canDelete ? `<span class="icon" title="Delete" style="cursor:pointer;color:#c62828;" onclick="deleteDoc('${d._id}','${(d.description || d.file_name || '').replace(/'/g, "\\'")}")"><i class="bi bi-trash"></i></span>` : ''}
+                ${canDelete ? `<span class="icon" title="Delete" style="cursor:pointer;color:#c62828;" onclick="deleteDoc('${d._id}','${(d.description || d.file_name || '').replace(/'/g, "\\'")}')"><i class="bi bi-trash"></i></span>` : ''}
               </td>
             </tr>`;
           }).join('');
